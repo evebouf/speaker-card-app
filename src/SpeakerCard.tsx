@@ -5,7 +5,6 @@ import { fetchFile } from "@ffmpeg/util";
 
 const CARD = 1080;
 const PAD = 44;
-const LOOP_DURATION = 2 * Math.PI; // one full trig cycle = seamless loop
 
 interface Speaker {
   id: string;
@@ -200,7 +199,6 @@ export default function SpeakerCard() {
 
     const fps = 30;
     const durationSec = 3;
-    const duration = durationSec * 1000;
     const totalFrames = Math.round(durationSec * fps); // 90 frames
 
     const stream = out.captureStream(0);
@@ -252,7 +250,7 @@ export default function SpeakerCard() {
     await ffmpeg.writeFile("input.webm", await fetchFile(webmBlob));
     await ffmpeg.exec(["-i", "input.webm", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-movflags", "+faststart", "output.mp4"]);
     const mp4Data = await ffmpeg.readFile("output.mp4");
-    const mp4Blob = new Blob([mp4Data], { type: "video/mp4" });
+    const mp4Blob = new Blob([mp4Data as BlobPart], { type: "video/mp4" });
 
     const url = URL.createObjectURL(mp4Blob);
     const a = document.createElement("a");
