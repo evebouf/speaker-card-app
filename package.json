@@ -13,9 +13,12 @@
     "@ffmpeg/ffmpeg": "^0.12.15",
     "@ffmpeg/util": "^0.12.2",
     "@paper-design/shaders-react": "^0.0.72",
+    "classnames": "^2.5.1",
     "gif.js": "^0.2.0",
     "gifenc": "^1.0.3",
+    "html-to-image": "^1.11.13",
     "html2canvas": "^1.4.1",
+    "motion": "^12.38.0",
     "puppeteer": "^24.40.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4"

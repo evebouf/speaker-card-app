@@ -1,7 +1,10 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { MeshGradient } from "@paper-design/shaders-react";
+import { MeshGradient, FlutedGlass } from "@paper-design/shaders-react";
 import { FFmpeg } from "@ffmpeg/ffmpeg";
 import { fetchFile } from "@ffmpeg/util";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+import pageBg from "./page-bg.png";
 
 const CARD = 1080;
 const PAD = 44;
@@ -10,9 +13,10 @@ interface Speaker {
   id: string;
   name: string;
   image: string;
-  role: string;
-  roleSecondLine?: string;
+  roleLines: string[];
+  smallRole?: boolean;
   sessionType: string;
+  frameOffset: number;
 }
 
 const SPEAKERS: Speaker[] = [
@@ -20,49 +24,83 @@ const SPEAKERS: Speaker[] = [
     id: "jensen",
     name: "Jensen Huang",
     image: "/jensen.png",
-    role: "Founder &",
-    roleSecondLine: "CEO, Nvidia",
+    roleLines: ["Founder &", "CEO, Nvidia"],
     sessionType: "Keynote",
+    frameOffset: 0,
   },
   {
     id: "sam",
     name: "Sam Altman",
     image: "/sam.png",
-    role: "Co-Founder &",
-    roleSecondLine: "CEO, OpenAI",
+    roleLines: ["Co-Founder &", "CEO, OpenAI"],
     sessionType: "Keynote",
+    frameOffset: 3200,
   },
   {
     id: "dario",
     name: "Dario Amodei",
     image: "/dario.png",
-    role: "Co-Founder &",
-    roleSecondLine: "CEO, Anthropic",
+    roleLines: ["Co-Founder &", "CEO, Anthropic"],
     sessionType: "Keynote",
+    frameOffset: 6800,
   },
   {
     id: "alexandr",
     name: "Alexandr Wang",
     image: "/alexandr.png",
-    role: "Chief AI",
-    roleSecondLine: "Officer, Meta",
+    roleLines: ["Chief AI", "Officer, Meta"],
     sessionType: "Keynote",
+    frameOffset: 1400,
   },
   {
     id: "jeff",
     name: "Jeff Dean",
     image: "/jeff.png",
-    role: "Chief Scientist,",
-    roleSecondLine: "Google DeepMind",
-    sessionType: "Keynote",
+    roleLines: ["Chief Scientist,", "Google DeepMind", "& Google Research"],
+    smallRole: true,
+    sessionType: "Speaker",
+    frameOffset: 5100,
   },
   {
     id: "tarek",
     name: "Tarek Mansour",
     image: "/tarek.png",
-    role: "Co-Founder &",
-    roleSecondLine: "CEO, Kalshi (W19)",
-    sessionType: "Keynote",
+    roleLines: ["Co-Founder", "& CEO, Kalshi", "(W19)"],
+    sessionType: "Speaker",
+    frameOffset: 8500,
+  },
+  {
+    id: "blake",
+    name: "Blake Scholl",
+    image: "/blake.png",
+    roleLines: ["Founder & CEO,", "Boom Supersonic", "(W16)"],
+    sessionType: "Speaker",
+    frameOffset: 2700,
+  },
+  {
+    id: "max",
+    name: "Max Junestrand",
+    image: "/max.png",
+    roleLines: ["Co-Founder &", "CEO, Legora", "(W24)"],
+    sessionType: "Speaker",
+    frameOffset: 7300,
+  },
+  {
+    id: "chelsea",
+    name: "Chelsea Finn",
+    image: "/chelsea.png",
+    roleLines: ["Stanford", "Assistant", "Professor", "& Co-Founder,", "Physical", "Intelligence"],
+    smallRole: false,
+    sessionType: "Speaker",
+    frameOffset: 4400,
+  },
+  {
+    id: "dmitri",
+    name: "Dmitri Dolgov",
+    image: "/dmitri.png",
+    roleLines: ["Co-CEO,", "Waymo"],
+    sessionType: "Speaker",
+    frameOffset: 9200,
   },
 ];
 
@@ -73,17 +111,55 @@ export default function SpeakerCard() {
   const [recording, setRecording] = useState(false);
   const [manualFrame, setManualFrame] = useState<number | null>(null);
   const [showPanel, setShowPanel] = useState(false);
-  const [activeSpeaker, setActiveSpeaker] = useState(SPEAKERS[0]);
-  const [colors, setColors] = useState(["#FF6A00", "#FF8A30", "#FFCB8E", "#FFE4C2"]);
+  const [recordMode, setRecordMode] = useState<"idle" | "countdown" | "looping">("idle");
+  const [countdown, setCountdown] = useState(0);
+  const [loopProgress, setLoopProgress] = useState(0);
+  const [loopCount, setLoopCount] = useState(0);
+  const recordModeRef = useRef<"idle" | "countdown" | "looping">("idle");
+  const [activeSpeaker, setActiveSpeakerState] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("speaker");
+    return SPEAKERS.find((s) => s.id === id) || SPEAKERS[0];
+  });
+
+  const setActiveSpeaker = useCallback((s: Speaker) => {
+    setActiveSpeakerState(s);
+    const url = new URL(window.location.href);
+    url.searchParams.set("speaker", s.id);
+    window.history.replaceState(null, "", url.toString());
+  }, []);
+
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      const idx = SPEAKERS.findIndex((s) => s.id === activeSpeaker.id);
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setActiveSpeaker(SPEAKERS[(idx - 1 + SPEAKERS.length) % SPEAKERS.length]);
+      } else if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setActiveSpeaker(SPEAKERS[(idx + 1) % SPEAKERS.length]);
+      }
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [activeSpeaker]);
+
+  const [colors, setColors] = useState(["#FF6A00", "#FC5E10", "#FF8A30", "#FFCB8E", "#FFE4C2"]);
   const [distortion, setDistortion] = useState(0.6);
   const [swirl, setSwirl] = useState(0.3);
-  const [speed, setSpeed] = useState(1.2);
+  const [speed, setSpeed] = useState(1.8);
   const [grainMixer, setGrainMixer] = useState(0);
   const [grainOverlay, setGrainOverlay] = useState(0);
   const [scale, setScale] = useState(1);
   const [rotation, setRotation] = useState(0);
   const [offsetX, setOffsetX] = useState(0);
   const [offsetY, setOffsetY] = useState(0);
+  const [fluteEnabled, setFluteEnabled] = useState(false);
+  const [fluteSize, setFluteSize] = useState(0.5);
+  const [fluteShadows, setFluteShadows] = useState(0.25);
+  const [fluteHighlights, setFluteHighlights] = useState(0.1);
+  const [fluteDistortion, setFluteDistortion] = useState(0.5);
+  const [fluteEdges, setFluteEdges] = useState(0.25);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -148,7 +224,7 @@ export default function SpeakerCard() {
 
     // 4. Text
     const pad = PAD * scale;
-    const fontSize = Math.round(18 * scale);
+    const fontSize = Math.round(21 * scale);
     ctx.fillStyle = "#4A301D";
     ctx.font = `400 ${fontSize}px 'Martian Mono', monospace`;
 
@@ -161,10 +237,14 @@ export default function SpeakerCard() {
     ctx.textAlign = "right";
     ctx.fillText("JULY 25-26 2026", size - pad, pad);
     ctx.fillText("SPEAKER", size - pad, 390 * scale);
-    ctx.fillText(activeSpeaker.role.toUpperCase(), size - pad, 540 * scale);
-    if (activeSpeaker.roleSecondLine) {
-      ctx.fillText(activeSpeaker.roleSecondLine.toUpperCase(), size - pad, (540 + 18 * 1.5) * scale);
-    }
+
+    const roleFontSize = activeSpeaker.smallRole ? 17 : 21;
+    const roleFs = Math.round(roleFontSize * scale);
+    ctx.font = `400 ${roleFs}px 'Martian Mono', monospace`;
+    activeSpeaker.roleLines.forEach((line, i) => {
+      ctx.fillText(line.toUpperCase(), size - pad, (540 + roleFontSize * 1.5 * i) * scale);
+    });
+    ctx.font = `400 ${fontSize}px 'Martian Mono', monospace`;
 
     ctx.textBaseline = "bottom";
     ctx.textAlign = "left";
@@ -174,10 +254,11 @@ export default function SpeakerCard() {
   }, [readMeshGradient, activeSpeaker]);
 
   const handleDownloadJpeg = useCallback(() => {
+    const RES = CARD * 2; // 2160x2160 for high-res export
     const out = document.createElement("canvas");
-    out.width = CARD;
-    out.height = CARD;
-    compositeFrame(out.getContext("2d")!, CARD);
+    out.width = RES;
+    out.height = RES;
+    compositeFrame(out.getContext("2d")!, RES);
 
     const link = document.createElement("a");
     link.download = `speaker-card-${activeSpeaker.id}.jpg`;
@@ -265,12 +346,74 @@ export default function SpeakerCard() {
     setRecording(false);
   }, [compositeFrame]);
 
+  const LOOP_SECONDS = 4;
+  const PEAK_MS = 4000;
+
+  const handleRecordMode = useCallback(async () => {
+    if (recordModeRef.current !== "idle") {
+      // Stop
+      recordModeRef.current = "idle";
+      setRecordMode("idle");
+      setManualFrame(null);
+      return;
+    }
+
+    // Countdown 3, 2, 1
+    recordModeRef.current = "countdown";
+    setRecordMode("countdown");
+    for (let i = 3; i >= 1; i--) {
+      setCountdown(i);
+      await new Promise((r) => setTimeout(r, 1000));
+      if ((recordModeRef.current as string) === "idle") return;
+    }
+
+    // Start looping
+    recordModeRef.current = "looping";
+    setRecordMode("looping");
+    setLoopCount(0);
+    setCountdown(0);
+
+    const startTime = performance.now();
+
+    const animate = () => {
+      if (recordModeRef.current !== "looping") return;
+
+      const elapsed = performance.now() - startTime;
+      const loopDuration = LOOP_SECONDS * 1000;
+      const currentLoop = Math.floor(elapsed / loopDuration);
+      const progress = (elapsed % loopDuration) / loopDuration;
+
+      // Cosine ping-pong
+      const frameMs = (1 - Math.cos(2 * Math.PI * progress)) / 2 * PEAK_MS;
+
+      setManualFrame(frameMs);
+      setLoopProgress(progress);
+      setLoopCount(currentLoop + 1);
+
+      requestAnimationFrame(animate);
+    };
+
+    requestAnimationFrame(animate);
+  }, []);
+
   const meshProps = manualFrame !== null
-    ? { speed: 0, frame: manualFrame }
-    : { speed, frame: 0 };
+    ? { speed: 0, frame: manualFrame + activeSpeaker.frameOffset }
+    : { speed, frame: activeSpeaker.frameOffset };
 
   return (
     <div style={styles.page}>
+      <img
+        src={pageBg}
+        alt=""
+        style={{
+          pointerEvents: "none",
+          position: "absolute",
+          inset: 0,
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+        }}
+      />
       <div ref={cardRef} style={styles.card}>
         <div ref={meshParentRef} style={{ position: "absolute", inset: 0 }}>
           <MeshGradient
@@ -288,6 +431,31 @@ export default function SpeakerCard() {
             {...meshProps}
           />
         </div>
+
+        {fluteEnabled && (
+          <div style={{ position: "absolute", inset: 0, zIndex: 1 }}>
+            <FlutedGlass
+              style={{ width: "100%", height: "100%" }}
+              colorBack="#00000000"
+              colorShadow="#000000"
+              colorHighlight="#ffffff"
+              size={fluteSize}
+              shadows={fluteShadows}
+              highlights={fluteHighlights}
+              shape="lines"
+              angle={0}
+              distortionShape="prism"
+              distortion={fluteDistortion}
+              shift={0}
+              stretch={0}
+              blur={0}
+              edges={fluteEdges}
+              margin={0}
+              speed={0}
+              webGlContextAttributes={{ preserveDrawingBuffer: true }}
+            />
+          </div>
+        )}
 
         <canvas
           ref={canvasRef}
@@ -321,10 +489,15 @@ export default function SpeakerCard() {
           <span style={{ ...styles.label, position: "absolute", top: 540, left: PAD }}>
             {activeSpeaker.name}
           </span>
-          <span style={{ ...styles.label, position: "absolute", top: 540, right: PAD, textAlign: "right" }}>
-            {activeSpeaker.roleSecondLine
-              ? `${activeSpeaker.role}\n${activeSpeaker.roleSecondLine}`
-              : activeSpeaker.role}
+          <span style={{
+            ...styles.label,
+            position: "absolute",
+            top: 540,
+            right: PAD,
+            textAlign: "right",
+            ...(activeSpeaker.smallRole ? { fontSize: 17 } : {}),
+          }}>
+            {activeSpeaker.roleLines.join("\n")}
           </span>
           <span style={{ ...styles.label, position: "absolute", bottom: PAD, left: PAD }}>
             Chase Center, San Francisco
@@ -350,9 +523,69 @@ export default function SpeakerCard() {
         ))}
       </div>
 
+      {(recordMode === "countdown" || recordMode === "looping") && (
+        <div style={styles.recordPanel}>
+          {recordMode === "countdown" && (
+            <>
+              <div style={{ ...styles.recordStatus, color: "#FF8A30" }}>GET READY</div>
+              <div style={styles.countdownNumber}>{countdown}</div>
+              <div style={styles.recordHint}>Start QuickTime recording now</div>
+            </>
+          )}
+          {recordMode === "looping" && (() => {
+            const nearBoundary = loopProgress > 0.92 || loopProgress < 0.08;
+            const atCut = loopProgress > 0.92;
+            return (
+              <>
+                <div style={{
+                  ...styles.recordStatus,
+                  color: atCut ? "#4f4" : "#ff4444",
+                }}>
+                  {atCut ? "CUT HERE" : "RECORDING"}
+                </div>
+
+                <div style={{ display: "flex", alignItems: "center", gap: 8, width: "100%" }}>
+                  <div style={{
+                    ...styles.loopDot,
+                    ...(atCut ? { background: "#4f4", boxShadow: "0 0 8px rgba(68,255,68,0.8)" } : {}),
+                  }} />
+                  <div style={{ ...styles.loopBarBg, flex: 1 }}>
+                    <div style={{
+                      ...styles.loopBarFill,
+                      width: `${loopProgress * 100}%`,
+                      ...(atCut ? { background: "#4f4" } : {}),
+                    }} />
+                  </div>
+                </div>
+
+                <div style={styles.recordTimerRow}>
+                  <span>Loop {loopCount}</span>
+                  <span>{(loopProgress * LOOP_SECONDS).toFixed(1)}s / {LOOP_SECONDS}s</span>
+                </div>
+
+                <div style={{
+                  ...styles.recordHint,
+                  ...(nearBoundary ? { color: "#4f4" } : {}),
+                }}>
+                  {atCut
+                    ? "Stop QuickTime now for clean loop"
+                    : `Next cut point in ${((1 - loopProgress) * LOOP_SECONDS).toFixed(1)}s`}
+                </div>
+              </>
+            );
+          })()}
+        </div>
+      )}
+
       <div style={styles.btnRow}>
         <button onClick={() => setShowPanel((v) => !v)} style={styles.downloadBtn}>
           {showPanel ? "Close" : "Shader"}
+        </button>
+        <button onClick={handleRecordMode} style={{
+          ...styles.downloadBtn,
+          ...(recordMode !== "idle" ? { background: "#ff4444", color: "#fff" } : {}),
+        }}>
+          {recordMode === "idle" ? "Screen Record" : "Stop"}
         </button>
         <button onClick={handleDownloadJpeg} style={styles.downloadBtn}>
           Download JPEG
@@ -364,87 +597,132 @@ export default function SpeakerCard() {
 
       {showPanel && (
         <div style={styles.panel}>
-          <div style={styles.panelTitle}>Mesh Gradient</div>
+          <div style={styles.panelTitle}>Gradient</div>
 
-          <label style={styles.sliderLabel}>
-            Distortion
+          <div style={styles.controlRow}>
+            <div style={styles.controlLabel}>Distortion <span style={styles.controlValue}>{distortion.toFixed(2)}</span></div>
             <input type="range" min={0} max={1} step={0.01} value={distortion}
               onChange={(e) => setDistortion(+e.target.value)} style={styles.slider} />
-            <span style={styles.sliderValue}>{distortion.toFixed(2)}</span>
-          </label>
+          </div>
 
-          <label style={styles.sliderLabel}>
-            Swirl
+          <div style={styles.controlRow}>
+            <div style={styles.controlLabel}>Swirl <span style={styles.controlValue}>{swirl.toFixed(2)}</span></div>
             <input type="range" min={0} max={1} step={0.01} value={swirl}
               onChange={(e) => setSwirl(+e.target.value)} style={styles.slider} />
-            <span style={styles.sliderValue}>{swirl.toFixed(2)}</span>
-          </label>
+          </div>
 
-          <label style={styles.sliderLabel}>
-            Speed
+          <div style={styles.controlRow}>
+            <div style={styles.controlLabel}>Speed <span style={styles.controlValue}>{speed.toFixed(1)}</span></div>
             <input type="range" min={0} max={5} step={0.1} value={speed}
               onChange={(e) => setSpeed(+e.target.value)} style={styles.slider} />
-            <span style={styles.sliderValue}>{speed.toFixed(1)}</span>
-          </label>
+          </div>
 
-          <label style={styles.sliderLabel}>
-            Grain Mix
+          <div style={styles.controlRow}>
+            <div style={styles.controlLabel}>Grain Mix <span style={styles.controlValue}>{grainMixer.toFixed(2)}</span></div>
             <input type="range" min={0} max={1} step={0.01} value={grainMixer}
               onChange={(e) => setGrainMixer(+e.target.value)} style={styles.slider} />
-            <span style={styles.sliderValue}>{grainMixer.toFixed(2)}</span>
-          </label>
+          </div>
 
-          <label style={styles.sliderLabel}>
-            Grain Overlay
+          <div style={styles.controlRow}>
+            <div style={styles.controlLabel}>Grain Overlay <span style={styles.controlValue}>{grainOverlay.toFixed(2)}</span></div>
             <input type="range" min={0} max={1} step={0.01} value={grainOverlay}
               onChange={(e) => setGrainOverlay(+e.target.value)} style={styles.slider} />
-            <span style={styles.sliderValue}>{grainOverlay.toFixed(2)}</span>
-          </label>
+          </div>
 
-          <div style={{ ...styles.panelTitle, marginTop: 14, marginBottom: 10 }}>Transform</div>
+          <div style={{ ...styles.panelDivider }} />
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+            <div style={{ ...styles.panelTitle, marginBottom: 0 }}>Fluted Glass</div>
+            <button
+              onClick={() => setFluteEnabled((v) => !v)}
+              style={{
+                fontFamily: "'Martian Mono', monospace",
+                fontSize: 9,
+                fontWeight: 500,
+                letterSpacing: "0.06em",
+                textTransform: "uppercase" as const,
+                padding: "4px 10px",
+                borderRadius: 4,
+                border: "1px solid rgba(255,255,255,0.12)",
+                cursor: "pointer",
+                transition: "all 0.15s",
+                background: fluteEnabled ? "rgba(255,138,48,0.2)" : "rgba(255,255,255,0.05)",
+                color: fluteEnabled ? "#FF8A30" : "#666",
+              }}
+            >
+              {fluteEnabled ? "On" : "Off"}
+            </button>
+          </div>
 
-          <label style={styles.sliderLabel}>
-            Scale
+          <div style={styles.controlRow}>
+            <div style={styles.controlLabel}>Size <span style={styles.controlValue}>{fluteSize.toFixed(2)}</span></div>
+            <input type="range" min={0.05} max={2} step={0.01} value={fluteSize}
+              onChange={(e) => setFluteSize(+e.target.value)} style={styles.slider} />
+          </div>
+
+          <div style={styles.controlRow}>
+            <div style={styles.controlLabel}>Distortion <span style={styles.controlValue}>{fluteDistortion.toFixed(2)}</span></div>
+            <input type="range" min={0} max={1} step={0.01} value={fluteDistortion}
+              onChange={(e) => setFluteDistortion(+e.target.value)} style={styles.slider} />
+          </div>
+
+          <div style={styles.controlRow}>
+            <div style={styles.controlLabel}>Shadows <span style={styles.controlValue}>{fluteShadows.toFixed(2)}</span></div>
+            <input type="range" min={0} max={1} step={0.01} value={fluteShadows}
+              onChange={(e) => setFluteShadows(+e.target.value)} style={styles.slider} />
+          </div>
+
+          <div style={styles.controlRow}>
+            <div style={styles.controlLabel}>Highlights <span style={styles.controlValue}>{fluteHighlights.toFixed(2)}</span></div>
+            <input type="range" min={0} max={1} step={0.01} value={fluteHighlights}
+              onChange={(e) => setFluteHighlights(+e.target.value)} style={styles.slider} />
+          </div>
+
+          <div style={styles.controlRow}>
+            <div style={styles.controlLabel}>Edges <span style={styles.controlValue}>{fluteEdges.toFixed(2)}</span></div>
+            <input type="range" min={0} max={1} step={0.01} value={fluteEdges}
+              onChange={(e) => setFluteEdges(+e.target.value)} style={styles.slider} />
+          </div>
+
+          <div style={{ ...styles.panelDivider }} />
+          <div style={styles.panelTitle}>Transform</div>
+
+          <div style={styles.controlRow}>
+            <div style={styles.controlLabel}>Scale <span style={styles.controlValue}>{scale.toFixed(2)}</span></div>
             <input type="range" min={0.01} max={4} step={0.01} value={scale}
               onChange={(e) => setScale(+e.target.value)} style={styles.slider} />
-            <span style={styles.sliderValue}>{scale.toFixed(2)}</span>
-          </label>
+          </div>
 
-          <label style={styles.sliderLabel}>
-            Rotation
+          <div style={styles.controlRow}>
+            <div style={styles.controlLabel}>Rotation <span style={styles.controlValue}>{rotation}°</span></div>
             <input type="range" min={0} max={360} step={1} value={rotation}
               onChange={(e) => setRotation(+e.target.value)} style={styles.slider} />
-            <span style={styles.sliderValue}>{rotation}°</span>
-          </label>
+          </div>
 
-          <label style={styles.sliderLabel}>
-            Offset X
+          <div style={styles.controlRow}>
+            <div style={styles.controlLabel}>Offset X <span style={styles.controlValue}>{offsetX.toFixed(2)}</span></div>
             <input type="range" min={-1} max={1} step={0.01} value={offsetX}
               onChange={(e) => setOffsetX(+e.target.value)} style={styles.slider} />
-            <span style={styles.sliderValue}>{offsetX.toFixed(2)}</span>
-          </label>
+          </div>
 
-          <label style={styles.sliderLabel}>
-            Offset Y
+          <div style={styles.controlRow}>
+            <div style={styles.controlLabel}>Offset Y <span style={styles.controlValue}>{offsetY.toFixed(2)}</span></div>
             <input type="range" min={-1} max={1} step={0.01} value={offsetY}
               onChange={(e) => setOffsetY(+e.target.value)} style={styles.slider} />
-            <span style={styles.sliderValue}>{offsetY.toFixed(2)}</span>
-          </label>
+          </div>
 
-          <div style={{ marginTop: 12 }}>
-            <div style={styles.sliderLabel}>Colors</div>
-            <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
-              {colors.map((c, i) => (
-                <input key={i} type="color" value={c}
-                  onChange={(e) => {
-                    const next = [...colors];
-                    next[i] = e.target.value;
-                    setColors(next);
-                  }}
-                  style={styles.colorInput}
-                />
-              ))}
-            </div>
+          <div style={{ ...styles.panelDivider }} />
+          <div style={styles.panelTitle}>Colors</div>
+          <div style={{ display: "flex", gap: 10 }}>
+            {colors.map((c, i) => (
+              <input key={i} type="color" value={c}
+                onChange={(e) => {
+                  const next = [...colors];
+                  next[i] = e.target.value;
+                  setColors(next);
+                }}
+                style={styles.colorInput}
+              />
+            ))}
           </div>
         </div>
       )}
@@ -459,7 +737,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
-    background: "#111",
+    background: "#2E1F15",
   },
   btnRow: {
     position: "absolute",
@@ -500,7 +778,7 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#4A301D",
   },
   label: {
-    fontSize: 18,
+    fontSize: 21,
     fontWeight: 400,
     letterSpacing: "0.04em",
     lineHeight: 1.5,
@@ -552,54 +830,126 @@ const styles: Record<string, React.CSSProperties> = {
     position: "fixed",
     top: 20,
     right: 20,
-    width: 240,
-    background: "rgba(30,30,30,0.95)",
-    borderRadius: 10,
-    padding: "16px 18px",
+    width: 260,
+    background: "rgba(24,24,24,0.96)",
+    borderRadius: 12,
+    padding: "20px 22px",
     zIndex: 20,
-    backdropFilter: "blur(12px)",
-    border: "1px solid rgba(255,255,255,0.1)",
+    backdropFilter: "blur(16px)",
+    border: "1px solid rgba(255,255,255,0.08)",
     maxHeight: "calc(100vh - 40px)",
     overflowY: "auto" as const,
   },
   panelTitle: {
     fontFamily: "'Martian Mono', monospace",
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: 600,
-    color: "#aaa",
+    color: "#666",
     textTransform: "uppercase" as const,
-    letterSpacing: "0.06em",
+    letterSpacing: "0.08em",
+    marginBottom: 16,
+  },
+  panelDivider: {
+    height: 1,
+    background: "rgba(255,255,255,0.06)",
+    margin: "16px 0",
+  },
+  controlRow: {
     marginBottom: 14,
   },
-  sliderLabel: {
+  controlLabel: {
     display: "flex",
+    justifyContent: "space-between",
     alignItems: "center",
-    gap: 8,
+    fontFamily: "'Martian Mono', monospace",
+    fontSize: 11,
+    color: "#bbb",
+    marginBottom: 6,
+  },
+  controlValue: {
+    color: "#666",
+    fontSize: 10,
+  },
+  slider: {
+    width: "100%",
+    accentColor: "#FF8A30",
+    height: 4,
+    display: "block",
+  },
+  recordPanel: {
+    position: "fixed",
+    top: 20,
+    right: 20,
+    width: 220,
+    background: "rgba(24,24,24,0.96)",
+    backdropFilter: "blur(16px)",
+    borderRadius: 12,
+    padding: "16px 18px",
+    zIndex: 100,
+    border: "1px solid rgba(255,255,255,0.08)",
     fontFamily: "'Martian Mono', monospace",
     fontSize: 11,
     color: "#ccc",
-    marginBottom: 10,
+    display: "flex",
+    flexDirection: "column" as const,
+    gap: 10,
+    alignItems: "center",
   },
-  slider: {
-    flex: 1,
-    accentColor: "#FF8A30",
-    height: 4,
+  recordStatus: {
+    fontSize: 12,
+    fontWeight: 700,
+    letterSpacing: "0.1em",
+    textAlign: "center" as const,
   },
-  sliderValue: {
+  countdownNumber: {
     fontFamily: "'Martian Mono', monospace",
+    fontSize: 48,
+    fontWeight: 700,
+    color: "#fff",
+    lineHeight: 1,
+  },
+  recordTimerRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    width: "100%",
     fontSize: 10,
     color: "#888",
-    minWidth: 32,
-    textAlign: "right" as const,
+  },
+  recordHint: {
+    fontSize: 9,
+    color: "#666",
+    textAlign: "center" as const,
+    lineHeight: 1.4,
+  },
+  loopDot: {
+    width: 8,
+    height: 8,
+    borderRadius: "50%",
+    background: "#ff4444",
+    boxShadow: "0 0 6px rgba(255,68,68,0.6)",
+  },
+  loopBarBg: {
+    width: 100,
+    height: 4,
+    background: "rgba(255,255,255,0.1)",
+    borderRadius: 2,
+    overflow: "hidden",
+  },
+  loopBarFill: {
+    height: "100%",
+    background: "#FF8A30",
+    borderRadius: 2,
+    transition: "width 0.05s linear",
   },
   colorInput: {
-    width: 36,
-    height: 28,
-    border: "1px solid rgba(255,255,255,0.15)",
-    borderRadius: 4,
+    width: 40,
+    height: 32,
+    border: "1px solid rgba(255,255,255,0.1)",
+    borderRadius: 6,
     background: "none",
     cursor: "pointer",
     padding: 0,
+    flex: 1,
   },
 };
 
