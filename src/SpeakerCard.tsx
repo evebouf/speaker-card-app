@@ -25,7 +25,7 @@ const SPEAKERS: Speaker[] = [
     name: "Jensen Huang",
     image: "/jensen.png",
     roleLines: ["Founder &", "CEO, Nvidia"],
-    sessionType: "Keynote",
+    sessionType: "Fireside Chat",
     frameOffset: 0,
   },
   {
@@ -116,6 +116,7 @@ export default function SpeakerCard() {
   const [loopProgress, setLoopProgress] = useState(0);
   const [loopCount, setLoopCount] = useState(0);
   const recordModeRef = useRef<"idle" | "countdown" | "looping">("idle");
+  const [textLayout, setTextLayout] = useState<1 | 2 | 3>(3);
   const [activeSpeaker, setActiveSpeakerState] = useState(() => {
     const params = new URLSearchParams(window.location.search);
     const id = params.get("speaker");
@@ -216,42 +217,145 @@ export default function SpeakerCard() {
     // 3. Speaker photo
     const img = speakerImg.current;
     if (img) {
-      const s = (650 * scale) / img.height;
-      const w = img.width * s;
-      const h = img.height * s;
-      ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
+      if (textLayout === 3) {
+        // Centered
+        const s = (650 * scale) / img.height;
+        const w = img.width * s;
+        const h = img.height * s;
+        ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
+      } else {
+        const s = (650 * scale) / img.height;
+        const w = img.width * s;
+        const h = img.height * s;
+        ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
+      }
     }
 
     // 4. Text
     const pad = PAD * scale;
-    const fontSize = Math.round(21 * scale);
     ctx.fillStyle = "#4A301D";
-    ctx.font = `400 ${fontSize}px 'Martian Mono', monospace`;
 
-    ctx.textBaseline = "top";
-    ctx.textAlign = "left";
-    ctx.fillText("STARTUP SCHOOL 2026", pad, pad);
-    ctx.fillText(activeSpeaker.sessionType.toUpperCase(), pad, 390 * scale);
-    ctx.fillText(activeSpeaker.name.toUpperCase(), pad, 540 * scale);
+    if (textLayout === 1) {
+      const fontSize = Math.round(21 * scale);
+      ctx.font = `400 ${fontSize}px 'Martian Mono', monospace`;
 
-    ctx.textAlign = "right";
-    ctx.fillText("JULY 25-26 2026", size - pad, pad);
-    ctx.fillText("SPEAKER", size - pad, 390 * scale);
+      ctx.textBaseline = "top";
+      ctx.textAlign = "left";
+      ctx.fillText("STARTUP SCHOOL 2026", pad, pad);
+      ctx.fillText(activeSpeaker.sessionType.toUpperCase(), pad, 390 * scale);
+      ctx.fillText(activeSpeaker.name.toUpperCase(), pad, 540 * scale);
 
-    const roleFontSize = activeSpeaker.smallRole ? 17 : 21;
-    const roleFs = Math.round(roleFontSize * scale);
-    ctx.font = `400 ${roleFs}px 'Martian Mono', monospace`;
-    activeSpeaker.roleLines.forEach((line, i) => {
-      ctx.fillText(line.toUpperCase(), size - pad, (540 + roleFontSize * 1.5 * i) * scale);
-    });
-    ctx.font = `400 ${fontSize}px 'Martian Mono', monospace`;
+      ctx.textAlign = "right";
+      ctx.fillText("JULY 25-26 2026", size - pad, pad);
+      ctx.fillText("SPEAKER", size - pad, 390 * scale);
 
-    ctx.textBaseline = "bottom";
-    ctx.textAlign = "left";
-    ctx.fillText("CHASE CENTER, SAN FRANCISCO", pad, size - pad);
-    ctx.textAlign = "right";
-    ctx.fillText("HOSTED BY Y\u2009COMBINATOR", size - pad, size - pad);
-  }, [readMeshGradient, activeSpeaker]);
+      const roleFontSize = activeSpeaker.smallRole ? 17 : 21;
+      const roleFs = Math.round(roleFontSize * scale);
+      ctx.font = `400 ${roleFs}px 'Martian Mono', monospace`;
+      activeSpeaker.roleLines.forEach((line, i) => {
+        ctx.fillText(line.toUpperCase(), size - pad, (540 + roleFontSize * 1.5 * i) * scale);
+      });
+
+      ctx.font = `400 ${fontSize}px 'Martian Mono', monospace`;
+      ctx.textBaseline = "bottom";
+      ctx.textAlign = "left";
+      ctx.fillText("CHASE CENTER, SAN FRANCISCO", pad, size - pad);
+      ctx.textAlign = "right";
+      ctx.fillText("HOSTED BY Y\u2009COMBINATOR", size - pad, size - pad);
+    } else if (textLayout === 2) {
+      const smallFs = Math.round(21 * scale);
+      const nameFs = Math.round(64 * scale);
+
+      ctx.globalAlpha = 0.8;
+      ctx.font = `400 ${smallFs}px 'Martian Mono', monospace`;
+      ctx.textBaseline = "top";
+      ctx.textAlign = "left";
+      ctx.fillText("STARTUP SCHOOL", pad, pad);
+      ctx.fillText("2026", pad, pad + smallFs * 1.5);
+
+      ctx.textAlign = "right";
+      ctx.fillText("JULY 25-26", size - pad, pad);
+      ctx.fillText("CHASE CENTER, SF", size - pad, pad + smallFs * 1.5);
+
+      const byFs = Math.round(16 * scale);
+      ctx.font = `400 ${byFs}px 'Martian Mono', monospace`;
+      ctx.textBaseline = "top";
+      ctx.textAlign = "left";
+      ctx.fillText("BY Y\u2009COMBINATOR", pad, pad + smallFs * 1.5 * 2 + 5 * scale);
+
+      ctx.font = `400 ${smallFs}px 'Martian Mono', monospace`;
+      ctx.textBaseline = "bottom";
+      ctx.textAlign = "left";
+      ctx.fillText(activeSpeaker.sessionType.toUpperCase(), pad, size - pad - nameFs * 1.1 - 10 * scale);
+      ctx.globalAlpha = 1;
+
+      ctx.font = `500 ${nameFs}px 'Martian Mono', monospace`;
+      ctx.textBaseline = "bottom";
+      ctx.textAlign = "left";
+      ctx.fillText(activeSpeaker.name.toUpperCase(), pad, size - pad);
+
+      ctx.globalAlpha = 0.8;
+      const roleFontSize = activeSpeaker.smallRole ? 17 : 21;
+      const roleFs = Math.round(roleFontSize * scale);
+      ctx.font = `400 ${roleFs}px 'Martian Mono', monospace`;
+      ctx.textAlign = "right";
+      ctx.textBaseline = "bottom";
+      activeSpeaker.roleLines.forEach((line, i) => {
+        ctx.fillText(line.toUpperCase(), size - pad, size - pad - (activeSpeaker.roleLines.length - 1 - i) * roleFs * 1.5);
+      });
+      ctx.globalAlpha = 1;
+    } else {
+      // Layout 3: centered photo, corners + flanking text
+      const cornerFs = Math.round(19 * scale);
+      const nameFs = Math.round(48 * scale);
+      const roleFs = Math.round(19 * scale);
+
+      // Top left: Y Combinator Presents
+      ctx.font = `400 ${cornerFs}px 'Martian Mono', monospace`;
+      ctx.textBaseline = "top";
+      ctx.textAlign = "left";
+      ctx.fillText("Y\u2009COMBINATOR PRESENTS", pad, pad);
+
+      // Top right: Startup School 2026
+      ctx.textAlign = "right";
+      ctx.fillText("STARTUP SCHOOL 2026", size - pad, pad);
+
+      // Middle left: speaker name — stacked by word
+      ctx.font = `400 ${nameFs}px 'Martian Mono', monospace`;
+      ctx.textAlign = "left";
+      const nameParts = activeSpeaker.name.toUpperCase().split(" ");
+      const nameBlockH = nameParts.length * nameFs * 1.05;
+      const nameStartY = (size - nameBlockH) / 2;
+      nameParts.forEach((part, i) => {
+        ctx.fillText(part, pad, nameStartY + i * nameFs * 1.05);
+      });
+
+      // Middle right: role — vertically centered
+      ctx.font = `400 ${roleFs}px 'Martian Mono', monospace`;
+      ctx.globalAlpha = 0.9;
+      ctx.textAlign = "right";
+      const roleBlockH = activeSpeaker.roleLines.length * roleFs * 1.5;
+      const roleStartY = (size - roleBlockH) / 2;
+      activeSpeaker.roleLines.forEach((line, i) => {
+        ctx.fillText(line.toUpperCase(), size - pad, roleStartY + i * roleFs * 1.5);
+      });
+      ctx.globalAlpha = 1;
+
+      // Below photo: session type — centered
+      ctx.font = `400 ${cornerFs}px 'Martian Mono', monospace`;
+      ctx.textAlign = "center";
+      ctx.fillText(activeSpeaker.sessionType.toUpperCase(), size / 2, size / 2 + 340 * scale);
+
+      // Bottom left: location
+      ctx.textAlign = "left";
+      ctx.textBaseline = "bottom";
+      ctx.fillText("CHASE CENTER, SF", pad, size - pad);
+
+      // Bottom right: dates
+      ctx.textAlign = "right";
+      ctx.fillText("JULY 25-26", size - pad, size - pad);
+    }
+  }, [readMeshGradient, activeSpeaker, textLayout]);
 
   const handleDownloadJpeg = useCallback(() => {
     const RES = CARD * 2; // 2160x2160 for high-res export
@@ -272,64 +376,69 @@ export default function SpeakerCard() {
   const handleDownloadVideo = useCallback(async () => {
     setRecording(true);
 
-    const RES = CARD; // 1080x1080 full resolution
+    const RES = CARD * 2; // 2160x2160 for high-res export
     const out = document.createElement("canvas");
     out.width = RES;
     out.height = RES;
     const ctx = out.getContext("2d")!;
 
     const fps = 30;
-    const durationSec = 3;
-    const totalFrames = Math.round(durationSec * fps); // 90 frames
+    const durationSec = 4;
+    const totalFrames = Math.round(durationSec * fps);
 
-    const stream = out.captureStream(0);
-    const recorder = new MediaRecorder(stream, {
-      mimeType: "video/webm;codecs=vp9",
-      videoBitsPerSecond: 4_000_000, // 4 Mbps — keeps file well under 15MB for 3s
-    });
-
-    const chunks: Blob[] = [];
-    recorder.ondataavailable = (e) => {
-      if (e.data.size > 0) chunks.push(e.data);
-    };
-
-    recorder.start();
-
-    // Cosine ping-pong: smoothly goes 0 → peak → 0 with no discontinuities
+    // Cosine ping-pong: smoothly goes 0 → peak → 0
     const peakMs = 1500;
+
+    // Collect PNG frames
+    const pngFrames: Uint8Array[] = [];
 
     for (let i = 0; i < totalFrames; i++) {
       const progress = i / totalFrames;
       const frameMs = (1 - Math.cos(2 * Math.PI * progress)) / 2 * peakMs;
 
       setManualFrameRef.current(frameMs);
-      await new Promise((r) => setTimeout(r, 50));
+
+      // Wait for shader to render
+      await new Promise((r) => setTimeout(r, 80));
+      await new Promise((r) => requestAnimationFrame(r));
       await new Promise((r) => requestAnimationFrame(r));
 
       compositeFrame(ctx, RES);
 
-      const track = stream.getVideoTracks()[0] as any;
-      track?.requestFrame?.();
+      // Export frame as PNG blob
+      const blob = await new Promise<Blob>((resolve) => {
+        out.toBlob((b) => resolve(b!), "image/png");
+      });
+      const arrayBuf = await blob.arrayBuffer();
+      pngFrames.push(new Uint8Array(arrayBuf));
 
-      if (i % 30 === 0) {
-        console.log(`Recording frame ${i}/${totalFrames}`);
+      if (i % 10 === 0) {
+        console.log(`Capturing frame ${i + 1}/${totalFrames}`);
       }
     }
 
-    recorder.stop();
-
-    await new Promise<void>((resolve) => {
-      recorder.onstop = () => resolve();
-    });
-
-    const webmBlob = new Blob(chunks, { type: "video/webm" });
-
-    // Convert WebM → MP4 using ffmpeg.wasm (Twitter/X requires MP4)
-    console.log("Converting to MP4...");
+    // Encode PNG frames → MP4 using ffmpeg.wasm
+    console.log("Encoding MP4...");
     const ffmpeg = new FFmpeg();
     await ffmpeg.load();
-    await ffmpeg.writeFile("input.webm", await fetchFile(webmBlob));
-    await ffmpeg.exec(["-i", "input.webm", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-movflags", "+faststart", "output.mp4"]);
+
+    for (let i = 0; i < pngFrames.length; i++) {
+      const name = `frame${String(i).padStart(4, "0")}.png`;
+      await ffmpeg.writeFile(name, pngFrames[i]);
+    }
+
+    await ffmpeg.exec([
+      "-framerate", String(fps),
+      "-i", "frame%04d.png",
+      "-c:v", "libx264",
+      "-preset", "slow",
+      "-crf", "18",
+      "-pix_fmt", "yuv420p",
+      "-vf", "scale=1080:1080",
+      "-movflags", "+faststart",
+      "output.mp4",
+    ]);
+
     const mp4Data = await ffmpeg.readFile("output.mp4");
     const mp4Blob = new Blob([mp4Data as BlobPart], { type: "video/mp4" });
 
@@ -471,40 +580,154 @@ export default function SpeakerCard() {
           }}
         />
 
-        <img src={activeSpeaker.image} alt={activeSpeaker.name} style={styles.photo} />
+        <img src={activeSpeaker.image} alt={activeSpeaker.name} style={{
+          ...styles.photo,
+          ...(textLayout === 3 ? {
+            left: "50%",
+            top: "50%",
+            transform: "translate(-50%, -50%)",
+            maxHeight: 650,
+          } : {}),
+        }} />
 
         <div style={styles.textLayer}>
-          <span style={{ ...styles.label, position: "absolute", top: PAD, left: PAD }}>
-            Startup School 2026
-          </span>
-          <span style={{ ...styles.label, position: "absolute", top: PAD, right: PAD }}>
-            July 25-26 2026
-          </span>
-          <span style={{ ...styles.label, position: "absolute", top: 390, left: PAD }}>
-            {activeSpeaker.sessionType}
-          </span>
-          <span style={{ ...styles.label, position: "absolute", top: 390, right: PAD }}>
-            Speaker
-          </span>
-          <span style={{ ...styles.label, position: "absolute", top: 540, left: PAD }}>
-            {activeSpeaker.name}
-          </span>
-          <span style={{
-            ...styles.label,
-            position: "absolute",
-            top: 540,
-            right: PAD,
-            textAlign: "right",
-            ...(activeSpeaker.smallRole ? { fontSize: 17 } : {}),
-          }}>
-            {activeSpeaker.roleLines.join("\n")}
-          </span>
-          <span style={{ ...styles.label, position: "absolute", bottom: PAD, left: PAD }}>
-            Chase Center, San Francisco
-          </span>
-          <span style={{ ...styles.label, position: "absolute", bottom: PAD, right: PAD }}>
-            {"Hosted by Y\u2009Combinator"}
-          </span>
+          {textLayout === 1 ? (
+            <>
+              <span style={{ ...styles.label, position: "absolute", top: PAD, left: PAD }}>
+                Startup School 2026
+              </span>
+              <span style={{ ...styles.label, position: "absolute", top: PAD, right: PAD }}>
+                July 25-26 2026
+              </span>
+              <span style={{ ...styles.label, position: "absolute", top: 390, left: PAD }}>
+                {activeSpeaker.sessionType}
+              </span>
+              <span style={{ ...styles.label, position: "absolute", top: 390, right: PAD }}>
+                Speaker
+              </span>
+              <span style={{ ...styles.label, position: "absolute", top: 540, left: PAD }}>
+                {activeSpeaker.name}
+              </span>
+              <span style={{
+                ...styles.label,
+                position: "absolute",
+                top: 540,
+                right: PAD,
+                textAlign: "right",
+                ...(activeSpeaker.smallRole ? { fontSize: 17 } : {}),
+              }}>
+                {activeSpeaker.roleLines.join("\n")}
+              </span>
+              <span style={{ ...styles.label, position: "absolute", bottom: PAD, left: PAD }}>
+                Chase Center, San Francisco
+              </span>
+              <span style={{ ...styles.label, position: "absolute", bottom: PAD, right: PAD }}>
+                {"Hosted by Y\u2009Combinator"}
+              </span>
+            </>
+          ) : textLayout === 2 ? (
+            <>
+              {/* Layout 2: top line + bottom credit strip */}
+              <span style={{ ...styles.label, position: "absolute", top: PAD, left: PAD, fontSize: 21, opacity: 0.8 }}>
+                {"Startup School\n2026"}
+              </span>
+              <span style={{
+                ...styles.label,
+                position: "absolute",
+                bottom: PAD,
+                left: PAD,
+                fontSize: 64,
+                fontWeight: 500,
+                lineHeight: 1.1,
+                letterSpacing: "-0.02em",
+              }}>
+                {activeSpeaker.name}
+              </span>
+              <span style={{
+                ...styles.label,
+                position: "absolute",
+                bottom: PAD + 155,
+                left: PAD,
+                fontSize: 21,
+                opacity: 0.8,
+              }}>
+                {activeSpeaker.sessionType}
+              </span>
+              <span style={{
+                ...styles.label,
+                position: "absolute",
+                bottom: PAD,
+                right: PAD,
+                textAlign: "right",
+                fontSize: 21,
+                opacity: 0.8,
+                ...(activeSpeaker.smallRole ? { fontSize: 17 } : {}),
+              }}>
+                {activeSpeaker.roleLines.join("\n")}
+              </span>
+              <span style={{
+                ...styles.label,
+                position: "absolute",
+                top: PAD,
+                right: PAD,
+                fontSize: 21,
+                opacity: 0.8,
+                textAlign: "right",
+              }}>
+                {"July 25-26\nChase Center, SF"}
+              </span>
+              <span style={{
+                ...styles.label,
+                position: "absolute",
+                top: PAD + 65,
+                left: PAD,
+                fontSize: 16,
+                opacity: 0.8,
+                letterSpacing: "0.06em",
+              }}>
+                {"by Y\u2009Combinator"}
+              </span>
+            </>
+          ) : (
+            <>
+              {/* Layout 3: centered photo with corner text */}
+              {/* Top left: Y Combinator Presents / Startup School 2026 */}
+              <div style={{ position: "absolute", top: PAD, left: PAD, zIndex: 2 }}>
+                <span style={{ ...styles.label, fontSize: 19, opacity: 1, letterSpacing: "0.06em", display: "block" }}>
+                  {"Y\u2009Combinator Presents"}
+                </span>
+                <span style={{ ...styles.label, fontSize: 19, opacity: 1, letterSpacing: "0.06em", display: "block" }}>
+                  Startup School 2026
+                </span>
+              </div>
+
+              {/* Top right: Chase Center, SF / July 25-26 */}
+              <div style={{ position: "absolute", top: PAD, right: PAD, zIndex: 2, textAlign: "right" }}>
+                <span style={{ ...styles.label, fontSize: 19, opacity: 1, letterSpacing: "0.06em", display: "block" }}>
+                  Chase Center, SF
+                </span>
+                <span style={{ ...styles.label, fontSize: 19, opacity: 1, letterSpacing: "0.06em", display: "block" }}>
+                  July 25-26
+                </span>
+              </div>
+
+              {/* Middle left: speaker name */}
+              <span style={{ ...styles.label, position: "absolute", top: "50%", left: PAD, transform: "translateY(-50%)", fontSize: 48, fontWeight: 400, lineHeight: 1.05, letterSpacing: "-0.03em", zIndex: 2 }}>
+                {activeSpeaker.name.split(" ").join("\n")}
+              </span>
+
+              {/* Middle right: role */}
+              <span style={{ ...styles.label, position: "absolute", top: "50%", right: PAD, transform: "translateY(-50%)", fontSize: 19, opacity: 0.9, lineHeight: 1.5, fontWeight: 400, letterSpacing: "0.04em", textAlign: "right", zIndex: 2 }}>
+                {activeSpeaker.roleLines.join("\n")}
+              </span>
+
+
+              {/* Below photo: session type — centered */}
+              <span style={{ ...styles.label, position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, 340px)", fontSize: 19, opacity: 1, letterSpacing: "0.06em", textAlign: "center", zIndex: 2 }}>
+                {activeSpeaker.sessionType}
+              </span>
+            </>
+          )}
         </div>
       </div>
 
@@ -519,6 +742,19 @@ export default function SpeakerCard() {
             }}
           >
             {s.name}
+          </button>
+        ))}
+        <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "6px 0" }} />
+        {([1, 2, 3] as const).map((l) => (
+          <button
+            key={l}
+            onClick={() => setTextLayout(l)}
+            style={{
+              ...styles.tabBtn,
+              ...(textLayout === l ? styles.tabBtnActive : {}),
+            }}
+          >
+            Layout {l}
           </button>
         ))}
       </div>
