@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import SpeakerCard from "./SpeakerCard";
 import ConfirmationCard from "./ConfirmationCard";
 import BillboardCard from "./BillboardCard";
@@ -11,12 +11,26 @@ import BillboardCard4 from "./BillboardCard4";
 
 type View = "speaker" | "confirmation" | "billboard" | "billboard2" | "billboard25" | "billboard3" | "billboard35" | "billboard37" | "billboard4";
 
+const VIEWS: { value: View; label: string }[] = [
+  { value: "speaker", label: "Speaker" },
+  { value: "confirmation", label: "Confirmation" },
+  { value: "billboard", label: "Billboard" },
+  { value: "billboard2", label: "Billboard 2" },
+  { value: "billboard25", label: "BB 2.5" },
+  { value: "billboard3", label: "Billboard 3" },
+  { value: "billboard35", label: "BB 3.5" },
+  { value: "billboard37", label: "BB 3.7" },
+  { value: "billboard4", label: "Billboard 4" },
+];
+
 function App() {
   const [view, setView] = useState<View>(() => {
     const params = new URLSearchParams(window.location.search);
-    const v = params.get("view");
-    return v === "confirmation" ? "confirmation" : v === "billboard" ? "billboard" : v === "billboard2" ? "billboard2" : v === "billboard25" ? "billboard25" : v === "billboard3" ? "billboard3" : v === "billboard35" ? "billboard35" : v === "billboard37" ? "billboard37" : v === "billboard4" ? "billboard4" : "speaker";
+    const v = params.get("view") as View | null;
+    return VIEWS.some((x) => x.value === v) ? (v as View) : "speaker";
   });
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const updateScale = () => {
@@ -31,8 +45,20 @@ function App() {
     return () => window.removeEventListener("resize", updateScale);
   }, []);
 
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, [menuOpen]);
+
   const switchView = (v: View) => {
     setView(v);
+    setMenuOpen(false);
     const url = new URL(window.location.href);
     if (v === "speaker") {
       url.searchParams.delete("view");
@@ -42,127 +68,119 @@ function App() {
     window.history.replaceState(null, "", url.toString());
   };
 
+  const currentLabel = VIEWS.find((x) => x.value === view)?.label ?? "Speaker";
+
   return (
     <>
       {view === "speaker" ? <SpeakerCard /> : view === "confirmation" ? <ConfirmationCard /> : view === "billboard" ? <BillboardCard /> : view === "billboard2" ? <BillboardCard2 /> : view === "billboard25" ? <BillboardCard25 /> : view === "billboard3" ? <BillboardCard3 /> : view === "billboard35" ? <BillboardCard35 /> : view === "billboard37" ? <BillboardCard37 /> : <BillboardCard4 />}
 
-      {/* View tabs — bottom left */}
-      <div style={tabContainerStyle}>
+      <div ref={menuRef} style={menuContainerStyle}>
         <button
-          onClick={() => switchView("speaker")}
-          style={{
-            ...tabBtnStyle,
-            ...(view === "speaker" ? tabBtnActiveStyle : {}),
-          }}
+          onClick={() => setMenuOpen((v) => !v)}
+          style={triggerStyle}
+          aria-label="Switch view"
+          aria-expanded={menuOpen}
         >
-          Speaker
+          <span style={iconStyle}>{menuOpen ? "×" : "☰"}</span>
+          <span style={triggerLabelStyle}>{currentLabel}</span>
         </button>
-        <button
-          onClick={() => switchView("confirmation")}
-          style={{
-            ...tabBtnStyle,
-            ...(view === "confirmation" ? tabBtnActiveStyle : {}),
-          }}
-        >
-          Confirmation
-        </button>
-        <button
-          onClick={() => switchView("billboard")}
-          style={{
-            ...tabBtnStyle,
-            ...(view === "billboard" ? tabBtnActiveStyle : {}),
-          }}
-        >
-          Billboard
-        </button>
-        <button
-          onClick={() => switchView("billboard2")}
-          style={{
-            ...tabBtnStyle,
-            ...(view === "billboard2" ? tabBtnActiveStyle : {}),
-          }}
-        >
-          Billboard 2
-        </button>
-        <button
-          onClick={() => switchView("billboard25")}
-          style={{
-            ...tabBtnStyle,
-            ...(view === "billboard25" ? tabBtnActiveStyle : {}),
-          }}
-        >
-          BB 2.5
-        </button>
-        <button
-          onClick={() => switchView("billboard3")}
-          style={{
-            ...tabBtnStyle,
-            ...(view === "billboard3" ? tabBtnActiveStyle : {}),
-          }}
-        >
-          Billboard 3
-        </button>
-        <button
-          onClick={() => switchView("billboard35")}
-          style={{
-            ...tabBtnStyle,
-            ...(view === "billboard35" ? tabBtnActiveStyle : {}),
-          }}
-        >
-          BB 3.5
-        </button>
-        <button
-          onClick={() => switchView("billboard37")}
-          style={{
-            ...tabBtnStyle,
-            ...(view === "billboard37" ? tabBtnActiveStyle : {}),
-          }}
-        >
-          BB 3.7
-        </button>
-        <button
-          onClick={() => switchView("billboard4")}
-          style={{
-            ...tabBtnStyle,
-            ...(view === "billboard4" ? tabBtnActiveStyle : {}),
-          }}
-        >
-          Billboard 4
-        </button>
+
+        {menuOpen && (
+          <div style={dropdownStyle}>
+            {VIEWS.map((v) => (
+              <button
+                key={v.value}
+                onClick={() => switchView(v.value)}
+                style={{
+                  ...itemStyle,
+                  ...(view === v.value ? itemActiveStyle : {}),
+                }}
+              >
+                {v.label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </>
   );
 }
 
-const tabContainerStyle: React.CSSProperties = {
+const menuContainerStyle: React.CSSProperties = {
   position: "fixed",
-  bottom: 20,
-  left: 20,
-  display: "flex",
-  gap: 6,
+  top: 20,
+  right: 20,
   zIndex: 30,
 };
 
-const tabBtnStyle: React.CSSProperties = {
-  padding: "8px 14px",
+const triggerStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: 10,
+  padding: "10px 16px",
+  fontFamily: "'Martian Mono', monospace",
+  fontSize: 11,
+  fontWeight: 500,
+  background: "rgba(24,24,24,0.95)",
+  backdropFilter: "blur(12px)",
+  color: "#fff",
+  border: "1px solid rgba(255,255,255,0.1)",
+  borderRadius: 8,
+  cursor: "pointer",
+  letterSpacing: "0.04em",
+  textTransform: "uppercase",
+  boxShadow: "0 4px 16px rgba(0,0,0,0.3)",
+};
+
+const iconStyle: React.CSSProperties = {
+  fontSize: 16,
+  lineHeight: 1,
+  width: 16,
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+};
+
+const triggerLabelStyle: React.CSSProperties = {
+  whiteSpace: "nowrap",
+};
+
+const dropdownStyle: React.CSSProperties = {
+  position: "absolute",
+  top: "calc(100% + 8px)",
+  right: 0,
+  minWidth: 180,
+  background: "rgba(24,24,24,0.96)",
+  backdropFilter: "blur(16px)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  borderRadius: 10,
+  padding: 6,
+  display: "flex",
+  flexDirection: "column",
+  gap: 2,
+  boxShadow: "0 8px 28px rgba(0,0,0,0.5)",
+};
+
+const itemStyle: React.CSSProperties = {
+  padding: "9px 12px",
   fontFamily: "'Martian Mono', monospace",
   fontSize: 11,
   fontWeight: 400,
-  background: "rgba(255,255,255,0.08)",
-  color: "#999",
-  border: "1px solid rgba(255,255,255,0.1)",
+  background: "transparent",
+  color: "#aaa",
+  border: "none",
   borderRadius: 6,
   cursor: "pointer",
+  textAlign: "left",
   letterSpacing: "0.03em",
   textTransform: "uppercase",
-  transition: "all 0.15s",
+  transition: "background 0.1s, color 0.1s",
 };
 
-const tabBtnActiveStyle: React.CSSProperties = {
-  background: "rgba(255,255,255,0.15)",
+const itemActiveStyle: React.CSSProperties = {
+  background: "rgba(255,255,255,0.1)",
   color: "#fff",
   fontWeight: 600,
-  borderColor: "rgba(255,255,255,0.2)",
 };
 
 export default App;

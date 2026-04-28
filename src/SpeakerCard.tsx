@@ -111,7 +111,6 @@ export default function SpeakerCard() {
   const [recording, setRecording] = useState(false);
   const [manualFrame, setManualFrame] = useState<number | null>(null);
   const [showPanel, setShowPanel] = useState(false);
-  const [showMenu, setShowMenu] = useState(false);
   const [recordMode, setRecordMode] = useState<"idle" | "countdown" | "looping">("idle");
   const [countdown, setCountdown] = useState(0);
   const [loopProgress, setLoopProgress] = useState(0);
@@ -989,48 +988,21 @@ export default function SpeakerCard() {
         </div>
       )}
 
-      <div style={styles.menuWrap}>
-        {showMenu && (
-          <div style={styles.menuItems}>
-            <button
-              onClick={() => { setShowPanel((v) => !v); setShowMenu(false); }}
-              style={styles.menuItem}
-            >
-              {showPanel ? "Close shader" : "Shader controls"}
-            </button>
-            <button
-              onClick={() => { handleRecordMode(); setShowMenu(false); }}
-              style={{
-                ...styles.menuItem,
-                ...(recordMode !== "idle" ? { color: "#ff5555" } : {}),
-              }}
-            >
-              {recordMode === "idle" ? "Screen record" : "Stop recording"}
-            </button>
-            <button
-              onClick={() => { handleDownloadJpeg(); setShowMenu(false); }}
-              style={styles.menuItem}
-            >
-              Download JPEG
-            </button>
-            <button
-              onClick={() => { handleDownloadVideo(); setShowMenu(false); }}
-              disabled={recording}
-              style={styles.menuItem}
-            >
-              {recording ? "Recording…" : "Download MP4"}
-            </button>
-          </div>
-        )}
-        <button
-          onClick={() => setShowMenu((v) => !v)}
-          style={{
-            ...styles.menuTrigger,
-            ...(recordMode !== "idle" ? { background: "#ff4444", color: "#fff" } : {}),
-          }}
-          aria-label="Actions"
-        >
-          {showMenu ? "×" : "≡"}
+      <div style={styles.btnRow}>
+        <button onClick={() => setShowPanel((v) => !v)} style={styles.downloadBtn}>
+          {showPanel ? "Close" : "Shader"}
+        </button>
+        <button onClick={handleRecordMode} style={{
+          ...styles.downloadBtn,
+          ...(recordMode !== "idle" ? { background: "#ff4444", color: "#fff" } : {}),
+        }}>
+          {recordMode === "idle" ? "Screen Record" : "Stop"}
+        </button>
+        <button onClick={handleDownloadJpeg} style={styles.downloadBtn}>
+          Download JPEG
+        </button>
+        <button onClick={handleDownloadVideo} disabled={recording} style={styles.downloadBtn}>
+          {recording ? "Recording..." : "Download MP4"}
         </button>
       </div>
 
@@ -1178,58 +1150,27 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: "center",
     background: "#2E1F15",
   },
-  menuWrap: {
+  btnRow: {
     position: "absolute",
     bottom: 20,
     right: 20,
     display: "flex",
     flexDirection: "column",
-    alignItems: "flex-end",
     gap: 10,
     zIndex: 10,
   },
-  menuTrigger: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+  downloadBtn: {
+    padding: "10px 20px",
+    fontFamily: "'Martian Mono', monospace",
+    fontSize: 12,
+    fontWeight: 500,
     background: "#fff",
     color: "#111",
     border: "none",
-    cursor: "pointer",
-    fontFamily: "'Martian Mono', monospace",
-    fontSize: 20,
-    lineHeight: 1,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    boxShadow: "0 4px 16px rgba(0,0,0,0.25)",
-    transition: "transform 0.15s, background 0.15s",
-  },
-  menuItems: {
-    background: "rgba(24,24,24,0.96)",
-    backdropFilter: "blur(16px)",
-    border: "1px solid rgba(255,255,255,0.08)",
-    borderRadius: 10,
-    padding: 6,
-    display: "flex",
-    flexDirection: "column" as const,
-    minWidth: 180,
-    boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
-  },
-  menuItem: {
-    padding: "10px 14px",
-    fontFamily: "'Martian Mono', monospace",
-    fontSize: 11,
-    fontWeight: 400,
-    background: "transparent",
-    color: "#ddd",
-    border: "none",
     borderRadius: 6,
     cursor: "pointer",
-    textAlign: "left" as const,
     letterSpacing: "0.03em",
     textTransform: "uppercase" as const,
-    transition: "background 0.1s",
   },
   card: {
     width: CARD,
@@ -1313,7 +1254,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   panel: {
     position: "fixed",
-    top: 20,
+    top: 76,
     right: 20,
     width: 260,
     background: "rgba(24,24,24,0.96)",
@@ -1322,7 +1263,7 @@ const styles: Record<string, React.CSSProperties> = {
     zIndex: 20,
     backdropFilter: "blur(16px)",
     border: "1px solid rgba(255,255,255,0.08)",
-    maxHeight: "calc(100vh - 40px)",
+    maxHeight: "calc(100vh - 96px)",
     overflowY: "auto" as const,
   },
   panelTitle: {
