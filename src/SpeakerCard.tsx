@@ -891,11 +891,9 @@ export default function SpeakerCard() {
               setActiveSpeaker(s);
               if (textLayout === 4) setTextLayout(3);
             }}
-            disabled={textLayout === 4}
             style={{
               ...styles.tabBtn,
               ...(activeSpeaker.id === s.id && textLayout !== 4 ? styles.tabBtnActive : {}),
-              ...(textLayout === 4 ? { opacity: 0.35, cursor: "not-allowed" } : {}),
             }}
           >
             {s.name}
