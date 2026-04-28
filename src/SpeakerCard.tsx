@@ -111,12 +111,14 @@ export default function SpeakerCard() {
   const [recording, setRecording] = useState(false);
   const [manualFrame, setManualFrame] = useState<number | null>(null);
   const [showPanel, setShowPanel] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
   const [recordMode, setRecordMode] = useState<"idle" | "countdown" | "looping">("idle");
   const [countdown, setCountdown] = useState(0);
   const [loopProgress, setLoopProgress] = useState(0);
   const [loopCount, setLoopCount] = useState(0);
   const recordModeRef = useRef<"idle" | "countdown" | "looping">("idle");
-  const [textLayout, setTextLayout] = useState<1 | 2 | 3>(3);
+  const [textLayout, setTextLayout] = useState<1 | 2 | 3 | 4>(3);
+  const allSpeakerImgs = useRef<Map<string, HTMLImageElement>>(new Map());
   const [activeSpeaker, setActiveSpeakerState] = useState(() => {
     const params = new URLSearchParams(window.location.search);
     const id = params.get("speaker");
@@ -191,6 +193,18 @@ export default function SpeakerCard() {
     img.onload = () => { speakerImg.current = img; };
   }, [activeSpeaker]);
 
+  // Preload all speaker images for Layout 4 lineup grid
+  useEffect(() => {
+    SPEAKERS.forEach((s) => {
+      if (!allSpeakerImgs.current.has(s.id)) {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.src = s.image;
+        img.onload = () => { allSpeakerImgs.current.set(s.id, img); };
+      }
+    });
+  }, []);
+
   /** Read the WebGL canvas directly (requires preserveDrawingBuffer on the MeshGradient) */
   const readMeshGradient = useCallback((ctx: CanvasRenderingContext2D, size: number) => {
     const glCanvas = meshParentRef.current?.querySelector("canvas");
@@ -200,6 +214,7 @@ export default function SpeakerCard() {
 
   const compositeFrame = useCallback((ctx: CanvasRenderingContext2D, size: number) => {
     const scale = size / CARD;
+    const pad = PAD * scale;
 
     // 1. Mesh gradient — read directly from the WebGL canvas
     readMeshGradient(ctx, size);
@@ -214,16 +229,59 @@ export default function SpeakerCard() {
       ctx.globalCompositeOperation = "source-over";
     }
 
-    // 3. Speaker photo
-    const img = speakerImg.current;
-    if (img) {
-      if (textLayout === 3) {
-        // Centered
-        const s = (650 * scale) / img.height;
-        const w = img.width * s;
-        const h = img.height * s;
-        ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
-      } else {
+    // 3. Speaker photo(s)
+    if (textLayout === 4) {
+      // Layout 4: draw all speaker photos in a 2x5 grid
+      const gridTop = 120 * scale;
+      const gridGap = 24 * scale;
+      const colGap = 8 * scale;
+      const cols = 5;
+      const availW = size - pad * 2;
+      const cellW = (availW - colGap * (cols - 1)) / cols;
+      const photoH = 280 * scale;
+      const rowH = photoH + 40 * scale; // photo + text space
+      const totalGridH = rowH * 2 + gridGap;
+      const gridStartY = gridTop + (size - gridTop - pad - totalGridH) / 2;
+
+      const nameFs = Math.round(15 * scale);
+      const roleFs = Math.round(12 * scale);
+
+      [SPEAKERS.slice(0, 5), SPEAKERS.slice(5, 10)].forEach((row, rowIdx) => {
+        row.forEach((s, colIdx) => {
+          const x = pad + colIdx * (cellW + colGap);
+          const y = gridStartY + rowIdx * (rowH + gridGap);
+
+          const sImg = allSpeakerImgs.current.get(s.id);
+          if (sImg) {
+            // Draw grayscale by using a temp canvas
+            const tmpC = document.createElement("canvas");
+            tmpC.width = Math.round(cellW);
+            tmpC.height = Math.round(photoH);
+            const tmpCtx = tmpC.getContext("2d")!;
+            tmpCtx.filter = "none";
+            // Cover: scale to fill width, crop from top
+            const imgScale = cellW / sImg.width;
+            tmpCtx.drawImage(sImg, 0, 0, sImg.width, Math.min(sImg.height, photoH / imgScale), 0, 0, cellW, photoH);
+            ctx.drawImage(tmpC, x, y);
+          }
+
+          // Name
+          ctx.font = `500 ${nameFs}px 'Martian Mono', monospace`;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "top";
+          ctx.fillText(s.name.toUpperCase(), x + cellW / 2, y + photoH + 8 * scale);
+
+          // Role
+          ctx.font = `400 ${roleFs}px 'Martian Mono', monospace`;
+          ctx.globalAlpha = 0.7;
+          const roleText = `${s.roleLines[0]}${s.roleLines[1] ? ` ${s.roleLines[1]}` : ""}`.toUpperCase();
+          ctx.fillText(roleText, x + cellW / 2, y + photoH + 8 * scale + nameFs * 1.4);
+          ctx.globalAlpha = 1;
+        });
+      });
+    } else {
+      const img = speakerImg.current;
+      if (img) {
         const s = (650 * scale) / img.height;
         const w = img.width * s;
         const h = img.height * s;
@@ -232,7 +290,6 @@ export default function SpeakerCard() {
     }
 
     // 4. Text
-    const pad = PAD * scale;
     ctx.fillStyle = "#4A301D";
 
     if (textLayout === 1) {
@@ -304,7 +361,7 @@ export default function SpeakerCard() {
         ctx.fillText(line.toUpperCase(), size - pad, size - pad - (activeSpeaker.roleLines.length - 1 - i) * roleFs * 1.5);
       });
       ctx.globalAlpha = 1;
-    } else {
+    } else if (textLayout === 3) {
       // Layout 3: centered photo, corners + flanking text
       const cornerFs = Math.round(19 * scale);
       const nameFs = Math.round(48 * scale);
@@ -354,6 +411,19 @@ export default function SpeakerCard() {
       // Bottom right: dates
       ctx.textAlign = "right";
       ctx.fillText("JULY 25-26", size - pad, size - pad);
+    } else if (textLayout === 4) {
+      // Layout 4: lineup grid — corner text only (photos drawn above)
+      const cornerFs = Math.round(19 * scale);
+
+      ctx.font = `400 ${cornerFs}px 'Martian Mono', monospace`;
+      ctx.textBaseline = "top";
+      ctx.textAlign = "left";
+      ctx.fillText("Y\u2009COMBINATOR PRESENTS", pad, pad);
+      ctx.fillText("STARTUP SCHOOL 2026", pad, pad + cornerFs * 1.5);
+
+      ctx.textAlign = "right";
+      ctx.fillText("CHASE CENTER, SF", size - pad, pad);
+      ctx.fillText("JULY 25-26", size - pad, pad + cornerFs * 1.5);
     }
   }, [readMeshGradient, activeSpeaker, textLayout]);
 
@@ -580,15 +650,17 @@ export default function SpeakerCard() {
           }}
         />
 
-        <img src={activeSpeaker.image} alt={activeSpeaker.name} style={{
-          ...styles.photo,
-          ...(textLayout === 3 ? {
-            left: "50%",
-            top: "50%",
-            transform: "translate(-50%, -50%)",
-            maxHeight: 650,
-          } : {}),
-        }} />
+        {textLayout !== 4 && (
+          <img src={activeSpeaker.image} alt={activeSpeaker.name} style={{
+            ...styles.photo,
+            ...(textLayout === 3 ? {
+              left: "50%",
+              top: "50%",
+              transform: "translate(-50%, -50%)",
+              maxHeight: 650,
+            } : {}),
+          }} />
+        )}
 
         <div style={styles.textLayer}>
           {textLayout === 1 ? (
@@ -688,7 +760,7 @@ export default function SpeakerCard() {
                 {"by Y\u2009Combinator"}
               </span>
             </>
-          ) : (
+          ) : textLayout === 3 ? (
             <>
               {/* Layout 3: centered photo with corner text */}
               {/* Top left: Y Combinator Presents / Startup School 2026 */}
@@ -727,36 +799,140 @@ export default function SpeakerCard() {
                 {activeSpeaker.sessionType}
               </span>
             </>
-          )}
+          ) : textLayout === 4 ? (
+            <>
+              {/* Layout 4: Full lineup grid — 2 rows of 5 */}
+              {/* Top left: Y Combinator Presents / Startup School 2026 */}
+              <div style={{ position: "absolute", top: PAD, left: PAD, zIndex: 2 }}>
+                <span style={{ ...styles.label, fontSize: 19, opacity: 1, letterSpacing: "0.06em", display: "block" }}>
+                  {"Y\u2009Combinator Presents"}
+                </span>
+                <span style={{ ...styles.label, fontSize: 19, opacity: 1, letterSpacing: "0.06em", display: "block" }}>
+                  Startup School 2026
+                </span>
+              </div>
+
+              {/* Top right: Chase Center, SF / July 25-26 */}
+              <div style={{ position: "absolute", top: PAD, right: PAD, zIndex: 2, textAlign: "right" }}>
+                <span style={{ ...styles.label, fontSize: 19, opacity: 1, letterSpacing: "0.06em", display: "block" }}>
+                  Chase Center, SF
+                </span>
+                <span style={{ ...styles.label, fontSize: 19, opacity: 1, letterSpacing: "0.06em", display: "block" }}>
+                  July 25-26
+                </span>
+              </div>
+
+              {/* Speaker grid */}
+              <div style={{
+                position: "absolute",
+                top: 120,
+                left: PAD,
+                right: PAD,
+                bottom: PAD,
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                gap: 24,
+                zIndex: 2,
+              }}>
+                {[SPEAKERS.slice(0, 5), SPEAKERS.slice(5, 10)].map((row, rowIdx) => (
+                  <div key={rowIdx} style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
+                    {row.map((s) => (
+                      <div key={s.id} style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "18.5%" }}>
+                        <img
+                          src={s.image}
+                          alt={s.name}
+                          style={{
+                            width: "100%",
+                            height: 280,
+                            objectFit: "cover",
+                            objectPosition: "top center",
+                            filter: "none",
+                            display: "block",
+                          }}
+                        />
+                        <span style={{
+                          ...styles.label,
+                          fontSize: 15,
+                          fontWeight: 500,
+                          marginTop: 10,
+                          textAlign: "center",
+                          lineHeight: 1.2,
+                          letterSpacing: "0.04em",
+                        }}>
+                          {s.name}
+                        </span>
+                        <span style={{
+                          ...styles.label,
+                          fontSize: 12,
+                          opacity: 0.7,
+                          marginTop: 3,
+                          textAlign: "center",
+                          lineHeight: 1.2,
+                          letterSpacing: "0.03em",
+                        }}>
+                          {s.roleLines[0]}{s.roleLines[1] ? ` ${s.roleLines[1]}` : ""}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : null}
         </div>
       </div>
 
       <div style={styles.speakerTabs}>
+        <div style={styles.sectionLabel}>Speaker</div>
         {SPEAKERS.map((s) => (
           <button
             key={s.id}
-            onClick={() => setActiveSpeaker(s)}
+            onClick={() => {
+              setActiveSpeaker(s);
+              if (textLayout === 4) setTextLayout(3);
+            }}
+            disabled={textLayout === 4}
             style={{
               ...styles.tabBtn,
-              ...(activeSpeaker.id === s.id ? styles.tabBtnActive : {}),
+              ...(activeSpeaker.id === s.id && textLayout !== 4 ? styles.tabBtnActive : {}),
+              ...(textLayout === 4 ? { opacity: 0.35, cursor: "not-allowed" } : {}),
             }}
           >
             {s.name}
           </button>
         ))}
-        <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "6px 0" }} />
-        {([1, 2, 3] as const).map((l) => (
+
+        <div style={styles.sectionDivider} />
+        <div style={styles.sectionLabel}>Layout</div>
+        {([
+          { value: 3, label: "Main" },
+          { value: 1, label: "Alt 1" },
+          { value: 2, label: "Alt 2" },
+        ] as const).map(({ value, label }) => (
           <button
-            key={l}
-            onClick={() => setTextLayout(l)}
+            key={value}
+            onClick={() => setTextLayout(value)}
             style={{
               ...styles.tabBtn,
-              ...(textLayout === l ? styles.tabBtnActive : {}),
+              ...(textLayout === value ? styles.tabBtnActive : {}),
             }}
           >
-            Layout {l}
+            {label}
           </button>
         ))}
+
+        <div style={styles.sectionDivider} />
+        <div style={styles.sectionLabel}>Lineup</div>
+        <button
+          onClick={() => setTextLayout(4)}
+          style={{
+            ...styles.tabBtn,
+            ...(textLayout === 4 ? styles.tabBtnActive : {}),
+          }}
+        >
+          All Speakers
+        </button>
       </div>
 
       {(recordMode === "countdown" || recordMode === "looping") && (
@@ -813,21 +989,48 @@ export default function SpeakerCard() {
         </div>
       )}
 
-      <div style={styles.btnRow}>
-        <button onClick={() => setShowPanel((v) => !v)} style={styles.downloadBtn}>
-          {showPanel ? "Close" : "Shader"}
-        </button>
-        <button onClick={handleRecordMode} style={{
-          ...styles.downloadBtn,
-          ...(recordMode !== "idle" ? { background: "#ff4444", color: "#fff" } : {}),
-        }}>
-          {recordMode === "idle" ? "Screen Record" : "Stop"}
-        </button>
-        <button onClick={handleDownloadJpeg} style={styles.downloadBtn}>
-          Download JPEG
-        </button>
-        <button onClick={handleDownloadVideo} disabled={recording} style={styles.downloadBtn}>
-          {recording ? "Recording..." : "Download MP4"}
+      <div style={styles.menuWrap}>
+        {showMenu && (
+          <div style={styles.menuItems}>
+            <button
+              onClick={() => { setShowPanel((v) => !v); setShowMenu(false); }}
+              style={styles.menuItem}
+            >
+              {showPanel ? "Close shader" : "Shader controls"}
+            </button>
+            <button
+              onClick={() => { handleRecordMode(); setShowMenu(false); }}
+              style={{
+                ...styles.menuItem,
+                ...(recordMode !== "idle" ? { color: "#ff5555" } : {}),
+              }}
+            >
+              {recordMode === "idle" ? "Screen record" : "Stop recording"}
+            </button>
+            <button
+              onClick={() => { handleDownloadJpeg(); setShowMenu(false); }}
+              style={styles.menuItem}
+            >
+              Download JPEG
+            </button>
+            <button
+              onClick={() => { handleDownloadVideo(); setShowMenu(false); }}
+              disabled={recording}
+              style={styles.menuItem}
+            >
+              {recording ? "Recording…" : "Download MP4"}
+            </button>
+          </div>
+        )}
+        <button
+          onClick={() => setShowMenu((v) => !v)}
+          style={{
+            ...styles.menuTrigger,
+            ...(recordMode !== "idle" ? { background: "#ff4444", color: "#fff" } : {}),
+          }}
+          aria-label="Actions"
+        >
+          {showMenu ? "×" : "≡"}
         </button>
       </div>
 
@@ -975,27 +1178,58 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: "center",
     background: "#2E1F15",
   },
-  btnRow: {
+  menuWrap: {
     position: "absolute",
     bottom: 20,
     right: 20,
     display: "flex",
     flexDirection: "column",
+    alignItems: "flex-end",
     gap: 10,
     zIndex: 10,
   },
-  downloadBtn: {
-    padding: "10px 20px",
-    fontFamily: "'Martian Mono', monospace",
-    fontSize: 12,
-    fontWeight: 500,
+  menuTrigger: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     background: "#fff",
     color: "#111",
     border: "none",
+    cursor: "pointer",
+    fontFamily: "'Martian Mono', monospace",
+    fontSize: 20,
+    lineHeight: 1,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    boxShadow: "0 4px 16px rgba(0,0,0,0.25)",
+    transition: "transform 0.15s, background 0.15s",
+  },
+  menuItems: {
+    background: "rgba(24,24,24,0.96)",
+    backdropFilter: "blur(16px)",
+    border: "1px solid rgba(255,255,255,0.08)",
+    borderRadius: 10,
+    padding: 6,
+    display: "flex",
+    flexDirection: "column" as const,
+    minWidth: 180,
+    boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
+  },
+  menuItem: {
+    padding: "10px 14px",
+    fontFamily: "'Martian Mono', monospace",
+    fontSize: 11,
+    fontWeight: 400,
+    background: "transparent",
+    color: "#ddd",
+    border: "none",
     borderRadius: 6,
     cursor: "pointer",
+    textAlign: "left" as const,
     letterSpacing: "0.03em",
     textTransform: "uppercase" as const,
+    transition: "background 0.1s",
   },
   card: {
     width: CARD,
@@ -1061,6 +1295,21 @@ const styles: Record<string, React.CSSProperties> = {
     background: "rgba(255,255,255,0.12)",
     color: "#fff",
     fontWeight: 600,
+  },
+  sectionLabel: {
+    fontFamily: "'Martian Mono', monospace",
+    fontSize: 9,
+    fontWeight: 600,
+    color: "#666",
+    textTransform: "uppercase" as const,
+    letterSpacing: "0.1em",
+    padding: "0 4px",
+    marginBottom: 2,
+  },
+  sectionDivider: {
+    height: 1,
+    background: "rgba(255,255,255,0.06)",
+    margin: "10px 0 6px",
   },
   panel: {
     position: "fixed",

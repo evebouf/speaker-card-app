@@ -1,6 +1,7 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { MeshGradient, FlutedGlass } from "@paper-design/shaders-react";
 import InteractiveCard from "./InteractiveCard";
+import qrCodeSvg from "./assets/qr-code.svg";
 import "./fonts.css";
 
 export interface FlutedGlassParams {
@@ -83,14 +84,22 @@ interface SUS2026ConfirmationCardProps {
   eventDate: string;
   glassParams?: FlutedGlassParams;
   halftoneParams?: HalftoneParams;
+  layout?: 1 | 2;
+  maxWidth?: number;
+  meshSpeed?: number;
+  singleLineLocation?: boolean;
+  keywordCode?: string;
+  stubPct?: number;
+  maxNameSize?: number;
+  quote?: React.ReactNode;
 }
 
 const FONT = "'Martian Mono', 'Geist Mono', 'Space Mono', monospace";
-const MAX_NAME_SIZE = 28;
-const MIN_NAME_SIZE = 12;
-const TEXT_COLOR = "#4A301D";
+const MAX_NAME_SIZE = 30;
+const MIN_NAME_SIZE = 16;
+const TEXT_COLOR = "#3A2414";
 
-const AutoSizeName: React.FC<{ name: string }> = ({ name }) => {
+const AutoSizeName: React.FC<{ name: string; maxSize?: number }> = ({ name, maxSize = MAX_NAME_SIZE }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [wordSizes, setWordSizes] = useState<number[]>([]);
 
@@ -104,7 +113,7 @@ const AutoSizeName: React.FC<{ name: string }> = ({ name }) => {
 
     const words = name.toUpperCase().split(" ");
     const sizes = words.map((word) => {
-      let size = MAX_NAME_SIZE;
+      let size = maxSize;
       while (size > MIN_NAME_SIZE) {
         ctx.font = `500 ${size}px ${FONT}`;
         ctx.letterSpacing = `${0.02 * size}px`;
@@ -131,7 +140,7 @@ const AutoSizeName: React.FC<{ name: string }> = ({ name }) => {
       }}
     >
       {words.map((word, i) => {
-        const size = wordSizes[i] ?? MAX_NAME_SIZE;
+        const size = wordSizes[i] ?? maxSize;
         return (
           <span
             key={`${word}-${i}`}
@@ -177,6 +186,14 @@ export const SUS2026ConfirmationCard: React.FC<
   eventName,
   eventDate,
   glassParams = DEFAULT_GLASS_PARAMS,
+  layout = 2,
+  maxWidth: maxWidthProp = 520,
+  meshSpeed: meshSpeedProp = 1.8,
+  singleLineLocation = false,
+  keywordCode,
+  stubPct = 76,
+  maxNameSize,
+  quote,
 }) => {
   const grainRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef({ offsetX: 0.15, offsetY: -0.21, glassScale: 2.2 });
@@ -191,8 +208,9 @@ export const SUS2026ConfirmationCard: React.FC<
     drawGrain(canvas);
   }, []);
 
-  // Animate FlutedGlass shader offsets
+  // Animate FlutedGlass shader offsets (only when mesh is animating)
   useEffect(() => {
+    if (meshSpeedProp === 0) return;
     let frame: number;
     const start = performance.now();
     let lastUpdate = 0;
@@ -209,20 +227,20 @@ export const SUS2026ConfirmationCard: React.FC<
     };
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
-  }, []);
+  }, [meshSpeedProp]);
 
-  // Ticket mask — same shape as before
-  const CORNER_NOTCH = 16;
-  const PERF_NOTCH = 14;
-  const STUB_PCT = 76;
+  // Ticket shape constants
+  const CN = 22; // corner notch radius
+  const PN = 20; // perforation notch radius
+  const stubWidth = `${Math.round(114 - stubPct)}%`;
 
   const gradients = [
-    `radial-gradient(circle ${CORNER_NOTCH}px at 0 0, transparent 99%, black 100%)`,
-    `radial-gradient(circle ${CORNER_NOTCH}px at 100% 0, transparent 99%, black 100%)`,
-    `radial-gradient(circle ${CORNER_NOTCH}px at 0 100%, transparent 99%, black 100%)`,
-    `radial-gradient(circle ${CORNER_NOTCH}px at 100% 100%, transparent 99%, black 100%)`,
-    `radial-gradient(circle ${PERF_NOTCH}px at ${STUB_PCT}% 0, transparent 99%, black 100%)`,
-    `radial-gradient(circle ${PERF_NOTCH}px at ${STUB_PCT}% 100%, transparent 99%, black 100%)`,
+    `radial-gradient(circle ${CN}px at 0 0, transparent 100%, black 100%)`,
+    `radial-gradient(circle ${CN}px at 100% 0, transparent 100%, black 100%)`,
+    `radial-gradient(circle ${CN}px at 0 100%, transparent 100%, black 100%)`,
+    `radial-gradient(circle ${CN}px at 100% 100%, transparent 100%, black 100%)`,
+    `radial-gradient(circle ${PN}px at ${stubPct}% 0, transparent 100%, black 100%)`,
+    `radial-gradient(circle ${PN}px at ${stubPct}% 100%, transparent 100%, black 100%)`,
   ].join(", ");
 
   const ticketMaskStyle: React.CSSProperties = {
@@ -230,6 +248,7 @@ export const SUS2026ConfirmationCard: React.FC<
     WebkitMaskComposite: "destination-in",
     maskImage: gradients,
     maskComposite: "intersect" as React.CSSProperties["maskComposite"],
+    boxShadow: "none",
   };
 
   const { offsetX, offsetY, glassScale } = animRef.current;
@@ -237,7 +256,7 @@ export const SUS2026ConfirmationCard: React.FC<
   const MESH_COLORS = ["#FF6A00", "#FC5E10", "#FF8A30", "#FFCB8E", "#FFE4C2"];
 
   return (
-    <InteractiveCard maskStyle={ticketMaskStyle}>
+    <InteractiveCard maskStyle={ticketMaskStyle} rotateDepth={meshSpeedProp === 0 ? 0 : 8} translateDepth={meshSpeedProp === 0 ? 0 : 8}>
       <div
         style={{
           fontFamily: FONT,
@@ -245,7 +264,7 @@ export const SUS2026ConfirmationCard: React.FC<
           display: "flex",
           minHeight: 280,
           width: "100%",
-          maxWidth: 520,
+          maxWidth: maxWidthProp,
           flexDirection: "row",
           alignItems: "stretch",
           overflow: "hidden",
@@ -260,7 +279,7 @@ export const SUS2026ConfirmationCard: React.FC<
             colors={MESH_COLORS}
             distortion={0.6}
             swirl={0.3}
-            speed={1.8}
+            speed={meshSpeedProp}
             grainMixer={0}
             grainOverlay={0}
             scale={1}
@@ -295,181 +314,218 @@ export const SUS2026ConfirmationCard: React.FC<
             flex: 1,
             flexDirection: "column",
             justifyContent: "space-between",
-            padding: 24,
+            padding: quote ? "16px 8px 16px 28px" : layout === 1 ? 24 : "20px 24px",
           }}
         >
-          <div style={{ position: "relative" }}>
-            <div
-              style={{
-                fontFamily: FONT,
-                fontSize: 11,
-                fontWeight: 400,
-                textTransform: "uppercase",
-                letterSpacing: "0.04em",
-                lineHeight: 1.5,
-                color: TEXT_COLOR,
-              }}
-            >
-              {eventName}
-            </div>
-            <div
-              style={{
-                fontFamily: FONT,
-                marginTop: 2,
-                fontSize: 11,
-                fontWeight: 400,
-                textTransform: "uppercase",
-                letterSpacing: "0.04em",
-                lineHeight: 1.5,
-                color: TEXT_COLOR,
-              }}
-            >
-              You're confirmed
-            </div>
-          </div>
-
-          <div style={{ position: "relative", margin: "16px 0" }}>
-            <AutoSizeName name={attendeeName} />
-            {attendeeLocation && (
-              <div
-                style={{
-                  fontFamily: FONT,
-                  marginTop: 8,
-                  fontSize: 11,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.04em",
-                  lineHeight: 1.5,
-                  color: TEXT_COLOR,
-                }}
-              >
-                From: {attendeeLocation}
-              </div>
-            )}
-          </div>
-
-          <div
-            style={{
-              fontFamily: FONT,
+          {quote ? (
+            <div style={{
               position: "relative",
-              whiteSpace: "nowrap",
-              fontSize: 11,
-              fontWeight: 400,
-              textTransform: "uppercase",
-              letterSpacing: "0.04em",
-              lineHeight: 1.5,
-              color: TEXT_COLOR,
-            }}
-          >
-            Chase Center, SF · {eventDate}
-          </div>
+              display: "flex",
+              alignItems: "center",
+              flex: 1,
+            }}>
+              <div style={{
+                fontFamily: FONT,
+                fontSize: 30,
+                fontWeight: 400,
+                textTransform: "uppercase",
+                letterSpacing: "-0.04em",
+                lineHeight: 1.25,
+                color: TEXT_COLOR,
+                whiteSpace: "pre-line",
+              }}>
+                {quote}
+              </div>
+            </div>
+          ) : layout === 1 ? (
+            <>
+              <div style={{ position: "relative" }}>
+                <div style={{ fontFamily: FONT, fontSize: 11, fontWeight: 400, textTransform: "uppercase", letterSpacing: "0.04em", lineHeight: 1.5, color: TEXT_COLOR }}>
+                  {eventName}
+                </div>
+                <div style={{ fontFamily: FONT, marginTop: 2, fontSize: 11, fontWeight: 400, textTransform: "uppercase", letterSpacing: "0.04em", lineHeight: 1.5, color: TEXT_COLOR }}>
+                  You're confirmed
+                </div>
+              </div>
+              <div style={{ position: "relative", margin: "16px 0" }}>
+                <AutoSizeName name={attendeeName} maxSize={maxNameSize} />
+                {attendeeLocation && (
+                  <div style={{ fontFamily: FONT, marginTop: 8, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.04em", lineHeight: 1.5, color: TEXT_COLOR }}>
+                    From: {attendeeLocation}
+                  </div>
+                )}
+              </div>
+              <div style={{ fontFamily: FONT, position: "relative", whiteSpace: "nowrap", fontSize: 11, fontWeight: 400, textTransform: "uppercase", letterSpacing: "0.04em", lineHeight: 1.5, color: TEXT_COLOR }}>
+                Chase Center, SF · {eventDate}
+              </div>
+            </>
+          ) : (
+            <>
+              <div style={{ position: "relative" }}>
+                <div style={{ fontFamily: FONT, fontSize: 15, fontWeight: 400, textTransform: "uppercase", letterSpacing: "0.08em", lineHeight: 1.4, color: TEXT_COLOR, opacity: 1 }}>
+                  {"Y\u2009Combinator Presents"}
+                </div>
+              </div>
+              <div style={{ position: "relative", margin: "12px 0" }}>
+                <AutoSizeName name={attendeeName} maxSize={maxNameSize} />
+              </div>
+              <div style={{ fontFamily: FONT, position: "relative", fontSize: 15, fontWeight: 400, textTransform: "uppercase", letterSpacing: "0.02em", lineHeight: 1.4, color: TEXT_COLOR, opacity: 1, whiteSpace: "nowrap" }}>
+                Chase Center {"\u00b7"} {eventDate}
+              </div>
+            </>
+          )}
         </div>
 
         {/* Ticket perforation line */}
         <div
           style={{
             position: "absolute",
-            top: PERF_NOTCH + 4,
-            bottom: PERF_NOTCH + 4,
-            left: `${STUB_PCT}%`,
+            top: PN + 4,
+            bottom: PN + 4,
+            left: `${stubPct}%`,
             zIndex: 5,
-            borderLeft: "1.5px dashed rgba(74, 48, 29, 0.2)",
+            borderLeft: "4px dashed rgba(58, 36, 20, 0.65)",
           }}
         />
 
-        {/* Right stub — FlutedGlass shader (kept from original) */}
+        {/* Stub overlay — keyword code or ADMIT ONE */}
+        <div
+          style={{
+            pointerEvents: "none",
+            position: "absolute",
+            top: 0,
+            bottom: 0,
+            left: `${stubPct}%`,
+            right: 0,
+            zIndex: 6,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            overflow: "hidden",
+          }}
+        >
+          {keywordCode ? (
+            <>
+              {/* QR code display */}
+              <div
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <img
+                  src={qrCodeSvg}
+                  alt="QR code"
+                  width={150}
+                  height={150}
+                  style={{ display: "block" }}
+                />
+              </div>
+            </>
+          ) : (
+            <>
+              {/* "ADMIT ONE" — foreground */}
+              <div
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  opacity: 0.4,
+                  fontFamily: FONT,
+                  color: "#4A301D",
+                  writingMode: "vertical-rl",
+                  fontSize: 40,
+                  fontWeight: 500,
+                  letterSpacing: "-0.02em",
+                  lineHeight: 1,
+                }}
+              >
+                ADMIT{"\u202F"}ONE
+              </div>
+              {/* "2026" — background with blend mode */}
+              <div
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  opacity: 0.15,
+                  mixBlendMode: "overlay",
+                  fontFamily: FONT,
+                  color: "#ffffff",
+                  writingMode: "vertical-rl",
+                  fontSize: 90,
+                  fontWeight: 700,
+                  letterSpacing: "0.05em",
+                  lineHeight: 1,
+                }}
+              >
+                2026
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Right stub — FlutedGlass shader (hidden when keyword code shown) */}
         <div
           style={{
             position: "relative",
             zIndex: 2,
             margin: "-12px -12px -12px 0",
-            width: "38%",
+            width: stubWidth,
             flexShrink: 0,
             overflow: "hidden",
             borderRadius: "0 13px 13px 0",
           }}
         >
-          {/* 2026 watermark */}
-          <div
-            style={{
-              pointerEvents: "none",
-              position: "absolute",
-              inset: 0,
-              zIndex: 3,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              overflow: "hidden",
-              opacity: 0.15,
-              mixBlendMode: "overlay",
-              fontFamily: FONT,
-              fontSize: 90,
-              fontWeight: 700,
-              color: "#ffffff",
-              letterSpacing: "0.05em",
-              lineHeight: 1,
-              writingMode: "vertical-rl",
-            }}
-          >
-            2026
-          </div>
-          {/* FlutedGlass — distorts the MeshGradient underneath */}
-          <div style={{ position: "absolute", inset: -2 }}>
-            <FlutedGlass
-              width="100%"
-              height="100%"
-              colorBack="#00000000"
-              colorShadow="#000000"
-              colorHighlight="#ffffff"
-              size={glassParams.size}
-              shadows={glassParams.shadows}
-              highlights={glassParams.highlights}
-              shape={glassParams.shape}
-              angle={glassParams.angle}
-              distortionShape={glassParams.distortionShape}
-              distortion={glassParams.distortion}
-              shift={glassParams.shift}
-              stretch={glassParams.stretch}
-              blur={glassParams.blur}
-              edges={glassParams.edges}
-              margin={glassParams.margin}
-              grainMixer={glassParams.grainMixer}
-              grainOverlay={glassParams.grainOverlay}
-              offsetX={offsetX}
-              offsetY={offsetY}
-              scale={glassScale}
-              fit="cover"
-            />
-          </div>
+          {!keywordCode && (
+            /* FlutedGlass — distorts the MeshGradient underneath */
+            <div style={{ position: "absolute", inset: -2 }}>
+              <FlutedGlass
+                width="100%"
+                height="100%"
+                colorBack="#00000000"
+                colorShadow="#000000"
+                colorHighlight="#ffffff"
+                size={glassParams.size}
+                shadows={glassParams.shadows}
+                highlights={glassParams.highlights}
+                shape={glassParams.shape}
+                angle={glassParams.angle}
+                distortionShape={glassParams.distortionShape}
+                distortion={glassParams.distortion}
+                shift={glassParams.shift}
+                stretch={glassParams.stretch}
+                blur={glassParams.blur}
+                edges={glassParams.edges}
+                margin={glassParams.margin}
+                grainMixer={glassParams.grainMixer}
+                grainOverlay={glassParams.grainOverlay}
+                offsetX={offsetX}
+                offsetY={offsetY}
+                scale={glassScale}
+                fit="cover"
+              />
+            </div>
+          )}
         </div>
 
-        {/* Presented by — rotated along right edge */}
-        <div
-          style={{
-            position: "absolute",
-            bottom: 0,
-            right: 6,
-            top: 0,
-            zIndex: 6,
-            display: "flex",
-            alignItems: "center",
-          }}
-        >
-          <div
-            style={{
-              fontFamily: FONT,
-              whiteSpace: "nowrap",
-              fontSize: 9,
-              fontWeight: 400,
-              textTransform: "uppercase",
-              letterSpacing: "0.04em",
-              lineHeight: 1.5,
-              color: "rgba(74, 48, 29, 0.7)",
-              writingMode: "vertical-rl",
-            }}
-          >
-            Presented by Y Combinator
-          </div>
-        </div>
       </div>
     </InteractiveCard>
   );

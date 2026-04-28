@@ -18,6 +18,7 @@ const PAD_Y = 120;
 export default function ConfirmationCard() {
   const cardRef = useRef<HTMLDivElement>(null);
   const [downloading, setDownloading] = useState(false);
+  const [layout, setLayout] = useState<1 | 2>(1);
 
   const attendeeName = "Sarah Chen";
   const attendeeLocation = "San Francisco, CA";
@@ -102,6 +103,7 @@ export default function ConfirmationCard() {
             eventDate={eventDate}
             glassParams={DEFAULT_GLASS_PARAMS}
             halftoneParams={DEFAULT_HALFTONE_PARAMS}
+            layout={layout}
           />
         </div>
 
@@ -138,8 +140,39 @@ export default function ConfirmationCard() {
             e.currentTarget.style.color = "rgba(244, 241, 219, 0.6)";
           }}
         >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
           Save
         </button>
+
+      </div>
+
+      <div style={{ position: "fixed", bottom: 20, right: 20, display: "flex", flexDirection: "column", gap: 6, zIndex: 30 }}>
+        {([1, 2] as const).map((l) => (
+          <button
+            key={l}
+            onClick={() => setLayout(l)}
+            style={{
+              fontFamily: FONT,
+              fontSize: 10,
+              fontWeight: layout === l ? 600 : 400,
+              textTransform: "uppercase",
+              letterSpacing: "0.04em",
+              padding: "6px 12px",
+              borderRadius: 6,
+              border: "1px solid rgba(244, 241, 219, 0.1)",
+              backgroundColor: layout === l ? "rgba(244, 241, 219, 0.12)" : "transparent",
+              color: layout === l ? "rgba(244, 241, 219, 0.8)" : "rgba(244, 241, 219, 0.4)",
+              cursor: "pointer",
+              transition: "all 0.15s",
+            }}
+          >
+            Layout {l}
+          </button>
+        ))}
       </div>
     </div>
   );

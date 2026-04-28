@@ -1,4 +1,10 @@
 {
+  "buildCommand": "vite build",
+  "build": {
+    "env": {
+      "PUPPETEER_SKIP_DOWNLOAD": "true"
+    }
+  },
   "headers": [
     {
       "source": "/(.*)",
