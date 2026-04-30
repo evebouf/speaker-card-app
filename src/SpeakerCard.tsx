@@ -33,7 +33,7 @@ const SPEAKERS: Speaker[] = [
     name: "Sam Altman",
     image: "/sam.png",
     roleLines: ["Co-Founder &", "CEO, OpenAI"],
-    sessionType: "Keynote",
+    sessionType: "Center Court Session",
     frameOffset: 3200,
   },
   {
@@ -41,7 +41,7 @@ const SPEAKERS: Speaker[] = [
     name: "Dario Amodei",
     image: "/dario.png",
     roleLines: ["Co-Founder &", "CEO, Anthropic"],
-    sessionType: "Keynote",
+    sessionType: "Center Court Session",
     frameOffset: 6800,
   },
   {
@@ -49,7 +49,7 @@ const SPEAKERS: Speaker[] = [
     name: "Alexandr Wang",
     image: "/alexandr.png",
     roleLines: ["Chief AI", "Officer, Meta"],
-    sessionType: "Keynote",
+    sessionType: "Center Court Session",
     frameOffset: 1400,
   },
   {
@@ -58,7 +58,7 @@ const SPEAKERS: Speaker[] = [
     image: "/jeff.png",
     roleLines: ["Chief Scientist,", "Google DeepMind", "& Google Research"],
     smallRole: true,
-    sessionType: "Speaker",
+    sessionType: "Center Court Session",
     frameOffset: 5100,
   },
   {
@@ -66,7 +66,7 @@ const SPEAKERS: Speaker[] = [
     name: "Tarek Mansour",
     image: "/tarek.png",
     roleLines: ["Co-Founder", "& CEO, Kalshi", "(W19)"],
-    sessionType: "Speaker",
+    sessionType: "Center Court Session",
     frameOffset: 8500,
   },
   {
@@ -74,7 +74,7 @@ const SPEAKERS: Speaker[] = [
     name: "Blake Scholl",
     image: "/blake.png",
     roleLines: ["Founder & CEO,", "Boom Supersonic", "(W16)"],
-    sessionType: "Speaker",
+    sessionType: "Center Court Session",
     frameOffset: 2700,
   },
   {
@@ -82,7 +82,7 @@ const SPEAKERS: Speaker[] = [
     name: "Max Junestrand",
     image: "/max.png",
     roleLines: ["Co-Founder &", "CEO, Legora", "(W24)"],
-    sessionType: "Speaker",
+    sessionType: "Center Court Session",
     frameOffset: 7300,
   },
   {
@@ -91,7 +91,7 @@ const SPEAKERS: Speaker[] = [
     image: "/chelsea.png",
     roleLines: ["Stanford", "Assistant", "Professor", "& Co-Founder,", "Physical", "Intelligence"],
     smallRole: false,
-    sessionType: "Speaker",
+    sessionType: "Center Court Session",
     frameOffset: 4400,
   },
   {
@@ -99,7 +99,7 @@ const SPEAKERS: Speaker[] = [
     name: "Dmitri Dolgov",
     image: "/dmitri.png",
     roleLines: ["Co-CEO,", "Waymo"],
-    sessionType: "Speaker",
+    sessionType: "Center Court Session",
     frameOffset: 9200,
   },
 ];
