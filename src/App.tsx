@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import SpeakerCard from "./SpeakerCard";
+import BlankCard from "./BlankCard";
 import ConfirmationCard from "./ConfirmationCard";
 import BillboardCard from "./BillboardCard";
 import BillboardCard2 from "./BillboardCard2";
@@ -9,10 +10,11 @@ import BillboardCard35 from "./BillboardCard35";
 import BillboardCard37 from "./BillboardCard37";
 import BillboardCard4 from "./BillboardCard4";
 
-type View = "speaker" | "confirmation" | "billboard" | "billboard2" | "billboard25" | "billboard3" | "billboard35" | "billboard37" | "billboard4";
+type View = "speaker" | "blank" | "confirmation" | "billboard" | "billboard2" | "billboard25" | "billboard3" | "billboard35" | "billboard37" | "billboard4";
 
 const VIEWS: { value: View; label: string }[] = [
   { value: "speaker", label: "Speaker" },
+  { value: "blank", label: "Blank" },
   { value: "confirmation", label: "Confirmation" },
   { value: "billboard", label: "Billboard" },
   { value: "billboard2", label: "Billboard 2" },
@@ -72,7 +74,7 @@ function App() {
 
   return (
     <>
-      {view === "speaker" ? <SpeakerCard /> : view === "confirmation" ? <ConfirmationCard /> : view === "billboard" ? <BillboardCard /> : view === "billboard2" ? <BillboardCard2 /> : view === "billboard25" ? <BillboardCard25 /> : view === "billboard3" ? <BillboardCard3 /> : view === "billboard35" ? <BillboardCard35 /> : view === "billboard37" ? <BillboardCard37 /> : <BillboardCard4 />}
+      {view === "speaker" ? <SpeakerCard /> : view === "blank" ? <BlankCard /> : view === "confirmation" ? <ConfirmationCard /> : view === "billboard" ? <BillboardCard /> : view === "billboard2" ? <BillboardCard2 /> : view === "billboard25" ? <BillboardCard25 /> : view === "billboard3" ? <BillboardCard3 /> : view === "billboard35" ? <BillboardCard35 /> : view === "billboard37" ? <BillboardCard37 /> : <BillboardCard4 />}
 
       <div ref={menuRef} style={menuContainerStyle}>
         <button

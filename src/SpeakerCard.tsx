@@ -36,14 +36,15 @@ const SPEAKERS: Speaker[] = [
     sessionType: "Center Court Session",
     frameOffset: 3200,
   },
-  {
-    id: "dario",
-    name: "Dario Amodei",
-    image: "/dario.png",
-    roleLines: ["Co-Founder &", "CEO, Anthropic"],
-    sessionType: "Center Court Session",
-    frameOffset: 6800,
-  },
+  // Dario Amodei — no longer confirmed
+  // {
+  //   id: "dario",
+  //   name: "Dario Amodei",
+  //   image: "/dario.png",
+  //   roleLines: ["Co-Founder &", "CEO, Anthropic"],
+  //   sessionType: "Center Court Session",
+  //   frameOffset: 6800,
+  // },
   {
     id: "alexandr",
     name: "Alexandr Wang",
@@ -56,9 +57,9 @@ const SPEAKERS: Speaker[] = [
     id: "jeff",
     name: "Jeff Dean",
     image: "/jeff.png",
-    roleLines: ["Chief Scientist,", "Google DeepMind", "& Google Research"],
+    roleLines: ["Chief Scientist", "Google DeepMind", "& Google Research"],
     smallRole: true,
-    sessionType: "Center Court Session",
+    sessionType: "Speaker",
     frameOffset: 5100,
   },
   {
@@ -66,7 +67,7 @@ const SPEAKERS: Speaker[] = [
     name: "Tarek Mansour",
     image: "/tarek.png",
     roleLines: ["Co-Founder", "& CEO, Kalshi", "(W19)"],
-    sessionType: "Center Court Session",
+    sessionType: "Speaker",
     frameOffset: 8500,
   },
   {
@@ -74,7 +75,7 @@ const SPEAKERS: Speaker[] = [
     name: "Blake Scholl",
     image: "/blake.png",
     roleLines: ["Founder & CEO,", "Boom Supersonic", "(W16)"],
-    sessionType: "Center Court Session",
+    sessionType: "Speaker",
     frameOffset: 2700,
   },
   {
@@ -91,7 +92,7 @@ const SPEAKERS: Speaker[] = [
     image: "/chelsea.png",
     roleLines: ["Stanford", "Assistant", "Professor", "& Co-Founder,", "Physical", "Intelligence"],
     smallRole: false,
-    sessionType: "Center Court Session",
+    sessionType: "Speaker",
     frameOffset: 4400,
   },
   {
@@ -305,7 +306,7 @@ export default function SpeakerCard() {
       ctx.fillText("JULY 25-26 2026", size - pad, pad);
       ctx.fillText("SPEAKER", size - pad, 390 * scale);
 
-      const roleFontSize = activeSpeaker.smallRole ? 17 : 21;
+      const roleFontSize = activeSpeaker.smallRole ? 15 : 21;
       const roleFs = Math.round(roleFontSize * scale);
       ctx.font = `400 ${roleFs}px 'Martian Mono', monospace`;
       activeSpeaker.roleLines.forEach((line, i) => {
@@ -351,7 +352,7 @@ export default function SpeakerCard() {
       ctx.fillText(activeSpeaker.name.toUpperCase(), pad, size - pad);
 
       ctx.globalAlpha = 0.8;
-      const roleFontSize = activeSpeaker.smallRole ? 17 : 21;
+      const roleFontSize = activeSpeaker.smallRole ? 15 : 21;
       const roleFs = Math.round(roleFontSize * scale);
       ctx.font = `400 ${roleFs}px 'Martian Mono', monospace`;
       ctx.textAlign = "right";
@@ -364,7 +365,7 @@ export default function SpeakerCard() {
       // Layout 3: centered photo, corners + flanking text
       const cornerFs = Math.round(19 * scale);
       const nameFs = Math.round(48 * scale);
-      const roleFs = Math.round(19 * scale);
+      const roleFs = Math.round((activeSpeaker.smallRole ? 16 : 19) * scale);
 
       // Top left: Y Combinator Presents
       ctx.font = `400 ${cornerFs}px 'Martian Mono', monospace`;
@@ -685,7 +686,7 @@ export default function SpeakerCard() {
                 top: 540,
                 right: PAD,
                 textAlign: "right",
-                ...(activeSpeaker.smallRole ? { fontSize: 17 } : {}),
+                ...(activeSpeaker.smallRole ? { fontSize: 15 } : {}),
               }}>
                 {activeSpeaker.roleLines.join("\n")}
               </span>
@@ -732,7 +733,7 @@ export default function SpeakerCard() {
                 textAlign: "right",
                 fontSize: 21,
                 opacity: 0.8,
-                ...(activeSpeaker.smallRole ? { fontSize: 17 } : {}),
+                ...(activeSpeaker.smallRole ? { fontSize: 15 } : {}),
               }}>
                 {activeSpeaker.roleLines.join("\n")}
               </span>
@@ -788,7 +789,7 @@ export default function SpeakerCard() {
               </span>
 
               {/* Middle right: role */}
-              <span style={{ ...styles.label, position: "absolute", top: "50%", right: PAD, transform: "translateY(-50%)", fontSize: 19, opacity: 0.9, lineHeight: 1.5, fontWeight: 400, letterSpacing: "0.04em", textAlign: "right", zIndex: 2 }}>
+              <span style={{ ...styles.label, position: "absolute", top: "50%", right: PAD, transform: "translateY(-50%)", fontSize: activeSpeaker.smallRole ? 16 : 19, opacity: 0.9, lineHeight: 1.5, fontWeight: 400, letterSpacing: "0.04em", textAlign: "right", zIndex: 2 }}>
                 {activeSpeaker.roleLines.join("\n")}
               </span>
 
