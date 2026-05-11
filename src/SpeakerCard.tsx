@@ -15,6 +15,7 @@ interface Speaker {
   image: string;
   roleLines: string[];
   smallRole?: boolean;
+  smallName?: boolean;
   sessionType: string;
   frameOffset: number;
 }
@@ -50,6 +51,7 @@ const SPEAKERS: Speaker[] = [
     name: "Alexandr Wang",
     image: "/alexandr.png",
     roleLines: ["Chief AI", "Officer, Meta"],
+    smallName: true,
     sessionType: "Center Court Session",
     frameOffset: 1400,
   },
@@ -102,6 +104,30 @@ const SPEAKERS: Speaker[] = [
     roleLines: ["Co-CEO,", "Waymo"],
     sessionType: "Center Court Session",
     frameOffset: 9200,
+  },
+  {
+    id: "maxhodak",
+    name: "Max Hodak",
+    image: "/maxhodak.jpg",
+    roleLines: ["Founder & CEO,", "Science Corp"],
+    sessionType: "Speaker",
+    frameOffset: 5800,
+  },
+  {
+    id: "patrick",
+    name: "Patrick Collison",
+    image: "/patrick.jpg",
+    roleLines: ["Co-Founder &", "CEO, Stripe"],
+    sessionType: "Center Court Session",
+    frameOffset: 4200,
+  },
+  {
+    id: "boris",
+    name: "Boris Cherny",
+    image: "/boris.jpg",
+    roleLines: ["Creator,", "Claude Code"],
+    sessionType: "Speaker",
+    frameOffset: 7800,
   },
 ];
 
@@ -300,7 +326,10 @@ export default function SpeakerCard() {
       ctx.textAlign = "left";
       ctx.fillText("STARTUP SCHOOL 2026", pad, pad);
       ctx.fillText(activeSpeaker.sessionType.toUpperCase(), pad, 390 * scale);
+      const nameFs1 = Math.round((activeSpeaker.smallName ? 18 : 21) * scale);
+      ctx.font = `400 ${nameFs1}px 'Martian Mono', monospace`;
       ctx.fillText(activeSpeaker.name.toUpperCase(), pad, 540 * scale);
+      ctx.font = `400 ${fontSize}px 'Martian Mono', monospace`;
 
       ctx.textAlign = "right";
       ctx.fillText("JULY 25-26 2026", size - pad, pad);
@@ -321,7 +350,7 @@ export default function SpeakerCard() {
       ctx.fillText("HOSTED BY Y\u2009COMBINATOR", size - pad, size - pad);
     } else if (textLayout === 2) {
       const smallFs = Math.round(21 * scale);
-      const nameFs = Math.round(64 * scale);
+      const nameFs = Math.round((activeSpeaker.smallName ? 54 : 64) * scale);
 
       ctx.globalAlpha = 0.8;
       ctx.font = `400 ${smallFs}px 'Martian Mono', monospace`;
@@ -364,7 +393,7 @@ export default function SpeakerCard() {
     } else if (textLayout === 3) {
       // Layout 3: centered photo, corners + flanking text
       const cornerFs = Math.round(19 * scale);
-      const nameFs = Math.round(48 * scale);
+      const nameFs = Math.round((activeSpeaker.smallName ? 40 : 48) * scale);
       const roleFs = Math.round((activeSpeaker.smallRole ? 16 : 19) * scale);
 
       // Top left: Y Combinator Presents
@@ -677,7 +706,7 @@ export default function SpeakerCard() {
               <span style={{ ...styles.label, position: "absolute", top: 390, right: PAD }}>
                 Speaker
               </span>
-              <span style={{ ...styles.label, position: "absolute", top: 540, left: PAD }}>
+              <span style={{ ...styles.label, position: "absolute", top: 540, left: PAD, ...(activeSpeaker.smallName ? { fontSize: 18 } : {}) }}>
                 {activeSpeaker.name}
               </span>
               <span style={{
@@ -708,7 +737,7 @@ export default function SpeakerCard() {
                 position: "absolute",
                 bottom: PAD,
                 left: PAD,
-                fontSize: 64,
+                fontSize: activeSpeaker.smallName ? 54 : 64,
                 fontWeight: 500,
                 lineHeight: 1.1,
                 letterSpacing: "-0.02em",
@@ -784,7 +813,7 @@ export default function SpeakerCard() {
               </div>
 
               {/* Middle left: speaker name */}
-              <span style={{ ...styles.label, position: "absolute", top: "50%", left: PAD, transform: "translateY(-50%)", fontSize: 48, fontWeight: 400, lineHeight: 1.05, letterSpacing: "-0.03em", zIndex: 2 }}>
+              <span style={{ ...styles.label, position: "absolute", top: "50%", left: PAD, transform: "translateY(-50%)", fontSize: activeSpeaker.smallName ? 40 : 48, fontWeight: 400, lineHeight: 1.05, letterSpacing: "-0.03em", zIndex: 2 }}>
                 {activeSpeaker.name.split(" ").join("\n")}
               </span>
 
