@@ -108,7 +108,7 @@ const SPEAKERS: Speaker[] = [
   {
     id: "maxhodak",
     name: "Max Hodak",
-    image: "/maxhodak.jpg",
+    image: "/maxhodak.png",
     roleLines: ["Co-Founder,", "Science Corp", "& Neuralink"],
     sessionType: "Speaker",
     frameOffset: 5800,
@@ -116,7 +116,7 @@ const SPEAKERS: Speaker[] = [
   {
     id: "patrick",
     name: "Patrick Collison",
-    image: "/patrick.jpg",
+    image: "/patrick.png",
     roleLines: ["Co-Founder &", "CEO, Stripe"],
     smallName: true,
     sessionType: "Center Court Session",
@@ -125,8 +125,8 @@ const SPEAKERS: Speaker[] = [
   {
     id: "boris",
     name: "Boris Cherny",
-    image: "/boris.jpg",
-    roleLines: ["Creator,", "Claude Code"],
+    image: "/boris.png",
+    roleLines: ["Head of Claude", "Code, Anthropic"],
     sessionType: "Center Court Session",
     frameOffset: 7800,
   },
