@@ -109,7 +109,7 @@ const SPEAKERS: Speaker[] = [
     id: "maxhodak",
     name: "Max Hodak",
     image: "/maxhodak.jpg",
-    roleLines: ["Founder & CEO,", "Science Corp"],
+    roleLines: ["Co-Founder,", "Science Corp", "& Neuralink"],
     sessionType: "Speaker",
     frameOffset: 5800,
   },
