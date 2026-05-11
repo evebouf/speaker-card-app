@@ -127,7 +127,7 @@ const SPEAKERS: Speaker[] = [
     name: "Boris Cherny",
     image: "/boris.jpg",
     roleLines: ["Creator,", "Claude Code"],
-    sessionType: "Speaker",
+    sessionType: "Center Court Session",
     frameOffset: 7800,
   },
 ];
