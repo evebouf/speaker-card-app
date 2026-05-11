@@ -118,6 +118,7 @@ const SPEAKERS: Speaker[] = [
     name: "Patrick Collison",
     image: "/patrick.jpg",
     roleLines: ["Co-Founder &", "CEO, Stripe"],
+    smallName: true,
     sessionType: "Center Court Session",
     frameOffset: 4200,
   },
