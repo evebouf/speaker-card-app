@@ -16,6 +16,8 @@ interface Speaker {
   roleLines: string[];
   smallRole?: boolean;
   smallName?: boolean;
+  /** Per-word font sizes for the name; if set, overrides smallName in stacked layouts. */
+  nameSizes?: number[];
   sessionType: string;
   frameOffset: number;
 }
@@ -85,7 +87,8 @@ const SPEAKERS: Speaker[] = [
     name: "Max Junestrand",
     image: "/max.png",
     roleLines: ["Co-Founder &", "CEO, Legora", "(W24)"],
-    sessionType: "Center Court Session",
+    nameSizes: [60, 28],
+    sessionType: "Speaker",
     frameOffset: 7300,
   },
   {
@@ -102,7 +105,7 @@ const SPEAKERS: Speaker[] = [
     name: "Dmitri Dolgov",
     image: "/dmitri.png",
     roleLines: ["Co-CEO,", "Waymo"],
-    sessionType: "Center Court Session",
+    sessionType: "Speaker",
     frameOffset: 9200,
   },
   {
@@ -407,14 +410,21 @@ export default function SpeakerCard() {
       ctx.textAlign = "right";
       ctx.fillText("STARTUP SCHOOL 2026", size - pad, pad);
 
-      // Middle left: speaker name — stacked by word
-      ctx.font = `400 ${nameFs}px 'Martian Mono', monospace`;
+      // Middle left: speaker name — stacked by word, optional per-part sizes
       ctx.textAlign = "left";
       const nameParts = activeSpeaker.name.toUpperCase().split(" ");
-      const nameBlockH = nameParts.length * nameFs * 1.05;
-      const nameStartY = (size - nameBlockH) / 2;
+      const partSizes = nameParts.map((_, i) => {
+        const override = activeSpeaker.nameSizes?.[i];
+        return Math.round((override ?? nameFs / scale) * scale);
+      });
+      const partHeights = partSizes.map((fs) => fs * 1.05);
+      const nameBlockH = partHeights.reduce((a, b) => a + b, 0);
+      let nameY = (size - nameBlockH) / 2;
       nameParts.forEach((part, i) => {
-        ctx.fillText(part, pad, nameStartY + i * nameFs * 1.05);
+        ctx.font = `400 ${partSizes[i]}px 'Martian Mono', monospace`;
+        ctx.textBaseline = "top";
+        ctx.fillText(part, pad, nameY);
+        nameY += partHeights[i];
       });
 
       // Middle right: role — vertically centered
@@ -687,7 +697,8 @@ export default function SpeakerCard() {
               left: "50%",
               top: "50%",
               transform: "translate(-50%, -50%)",
-              maxHeight: 650,
+              height: 650,
+              maxHeight: "none",
             } : {}),
           }} />
         )}
@@ -814,9 +825,16 @@ export default function SpeakerCard() {
               </div>
 
               {/* Middle left: speaker name */}
-              <span style={{ ...styles.label, position: "absolute", top: "50%", left: PAD, transform: "translateY(-50%)", fontSize: activeSpeaker.smallName ? 40 : 48, fontWeight: 400, lineHeight: 1.05, letterSpacing: "-0.03em", zIndex: 2 }}>
-                {activeSpeaker.name.split(" ").join("\n")}
-              </span>
+              <div style={{ position: "absolute", top: "50%", left: PAD, transform: "translateY(-50%)", zIndex: 2, display: "flex", flexDirection: "column", color: "#4A301D", fontFamily: "'Martian Mono', monospace", textTransform: "uppercase" }}>
+                {activeSpeaker.name.split(" ").map((part, i) => {
+                  const fs = activeSpeaker.nameSizes?.[i] ?? (activeSpeaker.smallName ? 40 : 48);
+                  return (
+                    <span key={i} style={{ fontSize: fs, fontWeight: 400, lineHeight: 1.05, letterSpacing: "-0.03em" }}>
+                      {part}
+                    </span>
+                  );
+                })}
+              </div>
 
               {/* Middle right: role */}
               <span style={{ ...styles.label, position: "absolute", top: "50%", right: PAD, transform: "translateY(-50%)", fontSize: activeSpeaker.smallRole ? 16 : 19, opacity: 0.9, lineHeight: 1.5, fontWeight: 400, letterSpacing: "0.04em", textAlign: "right", zIndex: 2 }}>
@@ -1229,7 +1247,7 @@ const styles: Record<string, React.CSSProperties> = {
     top: "50%",
     left: "50%",
     transform: "translate(-50%, -50%)",
-    maxHeight: 650,
+    height: 650,
     display: "block",
     zIndex: 1,
   },

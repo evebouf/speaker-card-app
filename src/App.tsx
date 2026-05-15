@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import SpeakerCard from "./SpeakerCard";
 import BlankCard from "./BlankCard";
+import FullScreenCard from "./FullScreenCard";
+import YouTubeCard from "./YouTubeCard";
+import ShortsCard from "./ShortsCard";
 import ConfirmationCard from "./ConfirmationCard";
 import BillboardCard from "./BillboardCard";
 import BillboardCard2 from "./BillboardCard2";
@@ -10,11 +13,14 @@ import BillboardCard35 from "./BillboardCard35";
 import BillboardCard37 from "./BillboardCard37";
 import BillboardCard4 from "./BillboardCard4";
 
-type View = "speaker" | "blank" | "confirmation" | "billboard" | "billboard2" | "billboard25" | "billboard3" | "billboard35" | "billboard37" | "billboard4";
+type View = "speaker" | "blank" | "fullscreen" | "youtube" | "shorts" | "confirmation" | "billboard" | "billboard2" | "billboard25" | "billboard3" | "billboard35" | "billboard37" | "billboard4";
 
 const VIEWS: { value: View; label: string }[] = [
   { value: "speaker", label: "Speaker" },
   { value: "blank", label: "Blank" },
+  { value: "fullscreen", label: "Full Screen" },
+  { value: "youtube", label: "YouTube 16:9" },
+  { value: "shorts", label: "Shorts 9:16" },
   { value: "confirmation", label: "Confirmation" },
   { value: "billboard", label: "Billboard" },
   { value: "billboard2", label: "Billboard 2" },
@@ -71,12 +77,13 @@ function App() {
   };
 
   const currentLabel = VIEWS.find((x) => x.value === view)?.label ?? "Speaker";
+  const isRaw = new URLSearchParams(window.location.search).get("raw") === "1";
 
   return (
     <>
-      {view === "speaker" ? <SpeakerCard /> : view === "blank" ? <BlankCard /> : view === "confirmation" ? <ConfirmationCard /> : view === "billboard" ? <BillboardCard /> : view === "billboard2" ? <BillboardCard2 /> : view === "billboard25" ? <BillboardCard25 /> : view === "billboard3" ? <BillboardCard3 /> : view === "billboard35" ? <BillboardCard35 /> : view === "billboard37" ? <BillboardCard37 /> : <BillboardCard4 />}
+      {view === "speaker" ? <SpeakerCard /> : view === "blank" ? <BlankCard /> : view === "fullscreen" ? <FullScreenCard /> : view === "youtube" ? <YouTubeCard /> : view === "shorts" ? <ShortsCard /> : view === "confirmation" ? <ConfirmationCard /> : view === "billboard" ? <BillboardCard /> : view === "billboard2" ? <BillboardCard2 /> : view === "billboard25" ? <BillboardCard25 /> : view === "billboard3" ? <BillboardCard3 /> : view === "billboard35" ? <BillboardCard35 /> : view === "billboard37" ? <BillboardCard37 /> : <BillboardCard4 />}
 
-      <div ref={menuRef} style={menuContainerStyle}>
+      {!isRaw && <div ref={menuRef} style={menuContainerStyle}>
         <button
           onClick={() => setMenuOpen((v) => !v)}
           style={triggerStyle}
@@ -103,41 +110,41 @@ function App() {
             ))}
           </div>
         )}
-      </div>
+      </div>}
     </>
   );
 }
 
 const menuContainerStyle: React.CSSProperties = {
   position: "fixed",
-  top: 20,
-  right: 20,
+  top: 8,
+  right: 8,
   zIndex: 30,
 };
 
 const triggerStyle: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
-  gap: 10,
-  padding: "10px 16px",
+  gap: 4,
+  padding: "3px 6px",
   fontFamily: "'Martian Mono', monospace",
-  fontSize: 11,
+  fontSize: 6,
   fontWeight: 500,
-  background: "rgba(24,24,24,0.95)",
-  backdropFilter: "blur(12px)",
+  background: "rgba(24,24,24,0.92)",
+  backdropFilter: "blur(8px)",
   color: "#fff",
-  border: "1px solid rgba(255,255,255,0.1)",
-  borderRadius: 8,
+  border: "1px solid rgba(255,255,255,0.08)",
+  borderRadius: 3,
   cursor: "pointer",
-  letterSpacing: "0.04em",
+  letterSpacing: "0.02em",
   textTransform: "uppercase",
-  boxShadow: "0 4px 16px rgba(0,0,0,0.3)",
+  boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
 };
 
 const iconStyle: React.CSSProperties = {
-  fontSize: 16,
+  fontSize: 8,
   lineHeight: 1,
-  width: 16,
+  width: 8,
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
@@ -149,29 +156,29 @@ const triggerLabelStyle: React.CSSProperties = {
 
 const dropdownStyle: React.CSSProperties = {
   position: "absolute",
-  top: "calc(100% + 8px)",
+  top: "calc(100% + 4px)",
   right: 0,
-  minWidth: 180,
+  minWidth: 130,
   background: "rgba(24,24,24,0.96)",
   backdropFilter: "blur(16px)",
   border: "1px solid rgba(255,255,255,0.08)",
-  borderRadius: 10,
-  padding: 6,
+  borderRadius: 6,
+  padding: 3,
   display: "flex",
   flexDirection: "column",
-  gap: 2,
-  boxShadow: "0 8px 28px rgba(0,0,0,0.5)",
+  gap: 1,
+  boxShadow: "0 4px 18px rgba(0,0,0,0.5)",
 };
 
 const itemStyle: React.CSSProperties = {
-  padding: "9px 12px",
+  padding: "3px 6px",
   fontFamily: "'Martian Mono', monospace",
-  fontSize: 11,
+  fontSize: 7,
   fontWeight: 400,
   background: "transparent",
   color: "#aaa",
   border: "none",
-  borderRadius: 6,
+  borderRadius: 4,
   cursor: "pointer",
   textAlign: "left",
   letterSpacing: "0.03em",
