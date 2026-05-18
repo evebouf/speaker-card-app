@@ -18,6 +18,10 @@ interface Speaker {
   smallName?: boolean;
   /** Per-word font sizes for the name; if set, overrides smallName in stacked layouts. */
   nameSizes?: number[];
+  /** CSS object-position for the lineup-grid thumbnail; default "center 30%". */
+  lineupPosition?: string;
+  /** Vertical anchor [0..1] in the source image where the face center is (default 0.3). Used by canvas composite. */
+  faceY?: number;
   sessionType: string;
   frameOffset: number;
 }
@@ -148,7 +152,22 @@ export default function SpeakerCard() {
   const [loopProgress, setLoopProgress] = useState(0);
   const [loopCount, setLoopCount] = useState(0);
   const recordModeRef = useRef<"idle" | "countdown" | "looping">("idle");
-  const [textLayout, setTextLayout] = useState<1 | 2 | 3 | 4>(3);
+  const [textLayout, setTextLayoutState] = useState<1 | 2 | 3 | 4>(() => {
+    const params = new URLSearchParams(window.location.search);
+    const v = params.get("layout");
+    const n = v ? parseInt(v, 10) : NaN;
+    return n === 1 || n === 2 || n === 4 ? n : 3;
+  });
+  const setTextLayout = useCallback((l: 1 | 2 | 3 | 4) => {
+    setTextLayoutState(l);
+    const url = new URL(window.location.href);
+    if (l === 3) {
+      url.searchParams.delete("layout");
+    } else {
+      url.searchParams.set("layout", String(l));
+    }
+    window.history.replaceState(null, "", url.toString());
+  }, []);
   const allSpeakerImgs = useRef<Map<string, HTMLImageElement>>(new Map());
   const [activeSpeaker, setActiveSpeakerState] = useState(() => {
     const params = new URLSearchParams(window.location.search);
@@ -262,38 +281,42 @@ export default function SpeakerCard() {
 
     // 3. Speaker photo(s)
     if (textLayout === 4) {
-      // Layout 4: draw all speaker photos in a 2x5 grid
+      // Layout 4: lineup grid — auto fit all speakers in a 4-wide grid
       const gridTop = 120 * scale;
-      const gridGap = 24 * scale;
+      const gridGap = 20 * scale;
       const colGap = 8 * scale;
-      const cols = 5;
+      const cols = 4;
+      const rows = Math.ceil(SPEAKERS.length / cols);
       const availW = size - pad * 2;
       const cellW = (availW - colGap * (cols - 1)) / cols;
-      const photoH = 280 * scale;
+      const photoH = 200 * scale;
       const rowH = photoH + 40 * scale; // photo + text space
-      const totalGridH = rowH * 2 + gridGap;
+      const totalGridH = rowH * rows + gridGap * (rows - 1);
       const gridStartY = gridTop + (size - gridTop - pad - totalGridH) / 2;
 
-      const nameFs = Math.round(15 * scale);
-      const roleFs = Math.round(12 * scale);
+      const nameFs = Math.round(14 * scale);
+      const roleFs = Math.round(11 * scale);
 
-      [SPEAKERS.slice(0, 5), SPEAKERS.slice(5, 10)].forEach((row, rowIdx) => {
+      const gridRows: Speaker[][] = [];
+      for (let i = 0; i < SPEAKERS.length; i += cols) {
+        gridRows.push(SPEAKERS.slice(i, i + cols));
+      }
+      gridRows.forEach((row, rowIdx) => {
         row.forEach((s, colIdx) => {
           const x = pad + colIdx * (cellW + colGap);
           const y = gridStartY + rowIdx * (rowH + gridGap);
 
           const sImg = allSpeakerImgs.current.get(s.id);
           if (sImg) {
-            // Draw grayscale by using a temp canvas
-            const tmpC = document.createElement("canvas");
-            tmpC.width = Math.round(cellW);
-            tmpC.height = Math.round(photoH);
-            const tmpCtx = tmpC.getContext("2d")!;
-            tmpCtx.filter = "none";
-            // Cover: scale to fill width, crop from top
+            // Cover: scale by width to fill cellW, then crop from top (default)
+            // or from the speaker's faceY anchor [0..1] if set.
             const imgScale = cellW / sImg.width;
-            tmpCtx.drawImage(sImg, 0, 0, sImg.width, Math.min(sImg.height, photoH / imgScale), 0, 0, cellW, photoH);
-            ctx.drawImage(tmpC, x, y);
+            const visibleH = photoH;
+            const anchor = s.faceY ?? 0; // 0 = top crop (default)
+            const maxSrcY = sImg.height - visibleH / imgScale;
+            const srcY = Math.max(0, Math.min(anchor * maxSrcY, maxSrcY));
+            const srcH = Math.min(sImg.height - srcY, visibleH / imgScale);
+            ctx.drawImage(sImg, 0, srcY, sImg.width, srcH, x, y, cellW, photoH);
           }
 
           // Name
@@ -881,30 +904,35 @@ export default function SpeakerCard() {
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "center",
-                gap: 24,
+                gap: 20,
                 zIndex: 2,
               }}>
-                {[SPEAKERS.slice(0, 5), SPEAKERS.slice(5, 10)].map((row, rowIdx) => (
-                  <div key={rowIdx} style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
+                {(() => {
+                  const cols = 4;
+                  const rows: Speaker[][] = [];
+                  for (let i = 0; i < SPEAKERS.length; i += cols) rows.push(SPEAKERS.slice(i, i + cols));
+                  return rows;
+                })().map((row, rowIdx) => (
+                  <div key={rowIdx} style={{ display: "flex", justifyContent: "flex-start", gap: 8 }}>
                     {row.map((s) => (
-                      <div key={s.id} style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "18.5%" }}>
+                      <div key={s.id} style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "calc((100% - 24px) / 4)" }}>
                         <img
                           src={s.image}
                           alt={s.name}
                           style={{
                             width: "100%",
-                            height: 280,
+                            height: 200,
                             objectFit: "cover",
-                            objectPosition: "top center",
+                            objectPosition: s.lineupPosition ?? "top center",
                             filter: "none",
                             display: "block",
                           }}
                         />
                         <span style={{
                           ...styles.label,
-                          fontSize: 15,
+                          fontSize: 14,
                           fontWeight: 500,
-                          marginTop: 10,
+                          marginTop: 8,
                           textAlign: "center",
                           lineHeight: 1.2,
                           letterSpacing: "0.04em",
@@ -913,7 +941,7 @@ export default function SpeakerCard() {
                         </span>
                         <span style={{
                           ...styles.label,
-                          fontSize: 12,
+                          fontSize: 11,
                           opacity: 0.7,
                           marginTop: 3,
                           textAlign: "center",
