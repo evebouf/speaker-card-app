@@ -122,7 +122,8 @@ const SPEAKERS: Speaker[] = [
     image: "/patrick.png",
     roleLines: ["Co-Founder &", "CEO, Stripe"],
     smallName: true,
-    sessionType: "Center Court Session",
+    nameSizes: [36, 36],
+    sessionType: "Speaker",
     frameOffset: 4200,
   },
   {
