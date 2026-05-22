@@ -127,7 +127,7 @@ const SPEAKERS: Speaker[] = [
     roleLines: ["Co-Founder &", "CEO, Stripe"],
     smallName: true,
     nameSizes: [36, 36],
-    sessionType: "Speaker",
+    sessionType: "Center Court Session",
     frameOffset: 4200,
   },
   {
@@ -1089,31 +1089,31 @@ export default function SpeakerCard() {
           <div style={styles.controlRow}>
             <div style={styles.controlLabel}>Distortion <span style={styles.controlValue}>{distortion.toFixed(2)}</span></div>
             <input type="range" min={0} max={1} step={0.01} value={distortion}
-              onChange={(e) => setDistortion(+e.target.value)} style={styles.slider} />
+              onChange={(e) => setDistortion(+e.target.value)} className="shader-slider" style={styles.slider} />
           </div>
 
           <div style={styles.controlRow}>
             <div style={styles.controlLabel}>Swirl <span style={styles.controlValue}>{swirl.toFixed(2)}</span></div>
             <input type="range" min={0} max={1} step={0.01} value={swirl}
-              onChange={(e) => setSwirl(+e.target.value)} style={styles.slider} />
+              onChange={(e) => setSwirl(+e.target.value)} className="shader-slider" style={styles.slider} />
           </div>
 
           <div style={styles.controlRow}>
             <div style={styles.controlLabel}>Speed <span style={styles.controlValue}>{speed.toFixed(1)}</span></div>
             <input type="range" min={0} max={5} step={0.1} value={speed}
-              onChange={(e) => setSpeed(+e.target.value)} style={styles.slider} />
+              onChange={(e) => setSpeed(+e.target.value)} className="shader-slider" style={styles.slider} />
           </div>
 
           <div style={styles.controlRow}>
             <div style={styles.controlLabel}>Grain Mix <span style={styles.controlValue}>{grainMixer.toFixed(2)}</span></div>
             <input type="range" min={0} max={1} step={0.01} value={grainMixer}
-              onChange={(e) => setGrainMixer(+e.target.value)} style={styles.slider} />
+              onChange={(e) => setGrainMixer(+e.target.value)} className="shader-slider" style={styles.slider} />
           </div>
 
           <div style={styles.controlRow}>
             <div style={styles.controlLabel}>Grain Overlay <span style={styles.controlValue}>{grainOverlay.toFixed(2)}</span></div>
             <input type="range" min={0} max={1} step={0.01} value={grainOverlay}
-              onChange={(e) => setGrainOverlay(+e.target.value)} style={styles.slider} />
+              onChange={(e) => setGrainOverlay(+e.target.value)} className="shader-slider" style={styles.slider} />
           </div>
 
           <div style={{ ...styles.panelDivider }} />
@@ -1143,31 +1143,31 @@ export default function SpeakerCard() {
           <div style={styles.controlRow}>
             <div style={styles.controlLabel}>Size <span style={styles.controlValue}>{fluteSize.toFixed(2)}</span></div>
             <input type="range" min={0.05} max={2} step={0.01} value={fluteSize}
-              onChange={(e) => setFluteSize(+e.target.value)} style={styles.slider} />
+              onChange={(e) => setFluteSize(+e.target.value)} className="shader-slider" style={styles.slider} />
           </div>
 
           <div style={styles.controlRow}>
             <div style={styles.controlLabel}>Distortion <span style={styles.controlValue}>{fluteDistortion.toFixed(2)}</span></div>
             <input type="range" min={0} max={1} step={0.01} value={fluteDistortion}
-              onChange={(e) => setFluteDistortion(+e.target.value)} style={styles.slider} />
+              onChange={(e) => setFluteDistortion(+e.target.value)} className="shader-slider" style={styles.slider} />
           </div>
 
           <div style={styles.controlRow}>
             <div style={styles.controlLabel}>Shadows <span style={styles.controlValue}>{fluteShadows.toFixed(2)}</span></div>
             <input type="range" min={0} max={1} step={0.01} value={fluteShadows}
-              onChange={(e) => setFluteShadows(+e.target.value)} style={styles.slider} />
+              onChange={(e) => setFluteShadows(+e.target.value)} className="shader-slider" style={styles.slider} />
           </div>
 
           <div style={styles.controlRow}>
             <div style={styles.controlLabel}>Highlights <span style={styles.controlValue}>{fluteHighlights.toFixed(2)}</span></div>
             <input type="range" min={0} max={1} step={0.01} value={fluteHighlights}
-              onChange={(e) => setFluteHighlights(+e.target.value)} style={styles.slider} />
+              onChange={(e) => setFluteHighlights(+e.target.value)} className="shader-slider" style={styles.slider} />
           </div>
 
           <div style={styles.controlRow}>
             <div style={styles.controlLabel}>Edges <span style={styles.controlValue}>{fluteEdges.toFixed(2)}</span></div>
             <input type="range" min={0} max={1} step={0.01} value={fluteEdges}
-              onChange={(e) => setFluteEdges(+e.target.value)} style={styles.slider} />
+              onChange={(e) => setFluteEdges(+e.target.value)} className="shader-slider" style={styles.slider} />
           </div>
 
           <div style={{ ...styles.panelDivider }} />
@@ -1176,30 +1176,30 @@ export default function SpeakerCard() {
           <div style={styles.controlRow}>
             <div style={styles.controlLabel}>Scale <span style={styles.controlValue}>{scale.toFixed(2)}</span></div>
             <input type="range" min={0.01} max={4} step={0.01} value={scale}
-              onChange={(e) => setScale(+e.target.value)} style={styles.slider} />
+              onChange={(e) => setScale(+e.target.value)} className="shader-slider" style={styles.slider} />
           </div>
 
           <div style={styles.controlRow}>
             <div style={styles.controlLabel}>Rotation <span style={styles.controlValue}>{rotation}°</span></div>
             <input type="range" min={0} max={360} step={1} value={rotation}
-              onChange={(e) => setRotation(+e.target.value)} style={styles.slider} />
+              onChange={(e) => setRotation(+e.target.value)} className="shader-slider" style={styles.slider} />
           </div>
 
           <div style={styles.controlRow}>
             <div style={styles.controlLabel}>Offset X <span style={styles.controlValue}>{offsetX.toFixed(2)}</span></div>
             <input type="range" min={-1} max={1} step={0.01} value={offsetX}
-              onChange={(e) => setOffsetX(+e.target.value)} style={styles.slider} />
+              onChange={(e) => setOffsetX(+e.target.value)} className="shader-slider" style={styles.slider} />
           </div>
 
           <div style={styles.controlRow}>
             <div style={styles.controlLabel}>Offset Y <span style={styles.controlValue}>{offsetY.toFixed(2)}</span></div>
             <input type="range" min={-1} max={1} step={0.01} value={offsetY}
-              onChange={(e) => setOffsetY(+e.target.value)} style={styles.slider} />
+              onChange={(e) => setOffsetY(+e.target.value)} className="shader-slider" style={styles.slider} />
           </div>
 
           <div style={{ ...styles.panelDivider }} />
           <div style={styles.panelTitle}>Colors</div>
-          <div style={{ display: "flex", gap: 10 }}>
+          <div style={{ display: "flex", gap: 6 }}>
             {colors.map((c, i) => (
               <input key={i} type="color" value={c}
                 onChange={(e) => {
@@ -1207,6 +1207,7 @@ export default function SpeakerCard() {
                   next[i] = e.target.value;
                   setColors(next);
                 }}
+                className="shader-color"
                 style={styles.colorInput}
               />
             ))}
@@ -1330,47 +1331,53 @@ const styles: Record<string, React.CSSProperties> = {
   },
   panel: {
     position: "fixed",
-    top: 76,
-    right: 20,
-    width: 260,
-    background: "rgba(24,24,24,0.96)",
-    borderRadius: 12,
-    padding: "20px 22px",
+    top: 56,
+    right: 12,
+    width: 220,
+    background: "rgba(20,20,20,0.96)",
+    borderRadius: 10,
+    padding: "12px 14px",
     zIndex: 20,
-    backdropFilter: "blur(16px)",
+    backdropFilter: "blur(20px)",
     border: "1px solid rgba(255,255,255,0.08)",
-    maxHeight: "calc(100vh - 96px)",
+    boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+    maxHeight: "calc(100vh - 80px)",
     overflowY: "auto" as const,
   },
   panelTitle: {
     fontFamily: "'Martian Mono', monospace",
-    fontSize: 10,
+    fontSize: 8,
     fontWeight: 600,
     color: "#666",
     textTransform: "uppercase" as const,
-    letterSpacing: "0.08em",
-    marginBottom: 16,
+    letterSpacing: "0.12em",
+    marginBottom: 10,
+    marginTop: 0,
   },
   panelDivider: {
     height: 1,
-    background: "rgba(255,255,255,0.06)",
-    margin: "16px 0",
+    background: "rgba(255,255,255,0.05)",
+    margin: "12px -14px",
   },
   controlRow: {
-    marginBottom: 14,
+    marginBottom: 8,
   },
   controlLabel: {
     display: "flex",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "baseline",
     fontFamily: "'Martian Mono', monospace",
-    fontSize: 11,
+    fontSize: 9,
     color: "#bbb",
-    marginBottom: 6,
+    marginBottom: 2,
+    letterSpacing: "0.02em",
+    textTransform: "uppercase" as const,
   },
   controlValue: {
-    color: "#666",
-    fontSize: 10,
+    color: "#FF8A30",
+    fontSize: 9,
+    fontVariantNumeric: "tabular-nums",
+    fontWeight: 500,
   },
   slider: {
     width: "100%",
@@ -1444,10 +1451,10 @@ const styles: Record<string, React.CSSProperties> = {
     transition: "width 0.05s linear",
   },
   colorInput: {
-    width: 40,
-    height: 32,
+    width: 28,
+    height: 24,
     border: "1px solid rgba(255,255,255,0.1)",
-    borderRadius: 6,
+    borderRadius: 4,
     background: "none",
     cursor: "pointer",
     padding: 0,
