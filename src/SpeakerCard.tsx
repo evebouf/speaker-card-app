@@ -144,6 +144,7 @@ const SPEAKERS: Speaker[] = [
     image: "/peter.png",
     roleLines: ["ClawFather"],
     smallName: true,
+    nameSizes: [48, 28],
     sessionType: "Speaker",
     frameOffset: 6300,
   },
