@@ -138,6 +138,15 @@ const SPEAKERS: Speaker[] = [
     sessionType: "Center Court Session",
     frameOffset: 7800,
   },
+  {
+    id: "peter",
+    name: "Peter Steinberger",
+    image: "/peter.png",
+    roleLines: ["ClawFather"],
+    smallName: true,
+    sessionType: "Speaker",
+    frameOffset: 6300,
+  },
 ];
 
 export default function SpeakerCard() {

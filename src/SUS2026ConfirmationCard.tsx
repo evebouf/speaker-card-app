@@ -92,6 +92,8 @@ interface SUS2026ConfirmationCardProps {
   stubPct?: number;
   maxNameSize?: number;
   quote?: React.ReactNode;
+  /** Replace WebGL shaders with a static CSS gradient (use when tiling many tickets). */
+  staticBackground?: boolean;
 }
 
 const FONT = "'Martian Mono', 'Geist Mono', 'Space Mono', monospace";
@@ -194,6 +196,7 @@ export const SUS2026ConfirmationCard: React.FC<
   stubPct = 76,
   maxNameSize,
   quote,
+  staticBackground = false,
 }) => {
   const grainRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef({ offsetX: 0.15, offsetY: -0.21, glassScale: 2.2 });
@@ -272,22 +275,33 @@ export const SUS2026ConfirmationCard: React.FC<
           padding: 12,
         }}
       >
-        {/* Layer 0: Full-bleed MeshGradient (from speaker card) */}
+        {/* Layer 0: Full-bleed MeshGradient (or CSS fallback when staticBackground) */}
         <div style={{ position: "absolute", inset: 0, zIndex: 0 }}>
-          <MeshGradient
-            style={{ width: "100%", height: "100%" }}
-            colors={MESH_COLORS}
-            distortion={0.6}
-            swirl={0.3}
-            speed={meshSpeedProp}
-            grainMixer={0}
-            grainOverlay={0}
-            scale={1}
-            rotation={0}
-            offsetX={0}
-            offsetY={0}
-            webGlContextAttributes={{ preserveDrawingBuffer: true }}
-          />
+          {staticBackground ? (
+            <div
+              style={{
+                width: "100%",
+                height: "100%",
+                background:
+                  "radial-gradient(ellipse at 70% 50%, #FF6A00 0%, #FC5E10 22%, #FF8A30 45%, #FFCB8E 72%, #FFE4C2 100%)",
+              }}
+            />
+          ) : (
+            <MeshGradient
+              style={{ width: "100%", height: "100%" }}
+              colors={MESH_COLORS}
+              distortion={0.6}
+              swirl={0.3}
+              speed={meshSpeedProp}
+              grainMixer={0}
+              grainOverlay={0}
+              scale={1}
+              rotation={0}
+              offsetX={0}
+              offsetY={0}
+              webGlContextAttributes={{ preserveDrawingBuffer: true }}
+            />
+          )}
         </div>
 
         {/* Layer 1: Grain overlay (from speaker card) */}
@@ -494,7 +508,20 @@ export const SUS2026ConfirmationCard: React.FC<
             borderRadius: "0 13px 13px 0",
           }}
         >
-          {!keywordCode && (
+          {!keywordCode && staticBackground && (
+            /* Static CSS fallback: subtle vertical ridges to hint at the fluted glass look */
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                background:
+                  "repeating-linear-gradient(90deg, rgba(255,255,255,0.06) 0px, rgba(255,255,255,0.06) 1px, transparent 1px, transparent 10px), repeating-linear-gradient(90deg, rgba(0,0,0,0.04) 5px, rgba(0,0,0,0.04) 6px, transparent 6px, transparent 10px)",
+                pointerEvents: "none",
+                mixBlendMode: "soft-light",
+              }}
+            />
+          )}
+          {!keywordCode && !staticBackground && (
             /* FlutedGlass — distorts the MeshGradient underneath */
             <div style={{ position: "absolute", inset: -2 }}>
               <FlutedGlass
