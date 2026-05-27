@@ -94,6 +94,8 @@ interface SUS2026ConfirmationCardProps {
   quote?: React.ReactNode;
   /** Replace WebGL shaders with a static CSS gradient (use when tiling many tickets). */
   staticBackground?: boolean;
+  /** Override the default static gradient CSS — only used when staticBackground is true. */
+  staticGradient?: string;
 }
 
 const FONT = "'Martian Mono', 'Geist Mono', 'Space Mono', monospace";
@@ -197,6 +199,7 @@ export const SUS2026ConfirmationCard: React.FC<
   maxNameSize,
   quote,
   staticBackground = false,
+  staticGradient,
 }) => {
   const grainRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef({ offsetX: 0.15, offsetY: -0.21, glassScale: 2.2 });
@@ -283,6 +286,7 @@ export const SUS2026ConfirmationCard: React.FC<
                 width: "100%",
                 height: "100%",
                 background:
+                  staticGradient ??
                   "radial-gradient(ellipse at 70% 50%, #FF6A00 0%, #FC5E10 22%, #FF8A30 45%, #FFCB8E 72%, #FFE4C2 100%)",
               }}
             />

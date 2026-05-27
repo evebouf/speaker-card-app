@@ -49,12 +49,12 @@ const ATTENDEES: { name: string; location: string }[] = [
 ];
 
 // Render a wall of tickets. Uses staticBackground to avoid WebGL context limits.
-const MAX_TILES = 240;
+const MAX_TILES = 360;
 const NATIVE_WIDTH = 520;
 const NATIVE_HEIGHT = 280;
-const SCALE = 0.55;
-const TILE_WIDTH = NATIVE_WIDTH * SCALE;   // 286
-const TILE_HEIGHT = NATIVE_HEIGHT * SCALE; // 154
+const SCALE = 0.38;
+const TILE_WIDTH = NATIVE_WIDTH * SCALE;   // ~198
+const TILE_HEIGHT = NATIVE_HEIGHT * SCALE; // ~106
 
 export default function ConfirmationWall() {
   // Use a stable shuffle so the wall doesn't reshuffle on every render
@@ -69,13 +69,36 @@ export default function ConfirmationWall() {
     return result.slice(0, MAX_TILES);
   }, []);
 
+  // Deterministic pseudo-random transforms per index (no flicker on rerender)
+  // Multi-channel hash for rotation, x-offset, y-offset, z-index, gradient variation
+  const transformFor = (i: number) => {
+    const h1 = ((i * 2654435761) >>> 0) / 2 ** 32;
+    const h2 = ((i * 40503 + 17) >>> 0) / 2 ** 32;
+    const h3 = ((i * 2246822519 + 31) >>> 0) / 2 ** 32;
+    const h4 = ((i * 374761393 + 7) >>> 0) / 2 ** 32;
+    const h5 = ((i * 1597463007 + 53) >>> 0) / 2 ** 32;
+    const h6 = ((i * 3266489917 + 71) >>> 0) / 2 ** 32;
+    const rot = (h1 - 0.5) * 40;
+    const dx = (h2 - 0.5) * 40;
+    const dy = (h3 - 0.5) * 40;
+    const z = Math.floor(h4 * 13);
+    // Bright-spot position varies across the ticket
+    const gx = Math.round(20 + h5 * 75);   // 20%..95%
+    const gy = Math.round(20 + h6 * 60);   // 20%..80%
+    const gradient = `radial-gradient(ellipse at ${gx}% ${gy}%, #FF6A00 0%, #FC5E10 22%, #FF8A30 45%, #FFCB8E 72%, #FFE4C2 100%)`;
+    return { rot, dx, dy, z, gradient };
+  };
+
   return (
     <div style={styles.page}>
       <img src={pageBg} alt="" style={styles.bg} />
 
-      <div style={styles.grid}>
-        {tiles.map((t, i) => (
-          <div key={i} style={styles.tile}>
+      <div style={styles.frame}>
+       <div style={styles.grid}>
+        {tiles.map((t, i) => {
+          const { rot, dx, dy, z, gradient } = transformFor(i);
+          return (
+          <div key={i} style={{ ...styles.tile, transform: `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px) rotate(${rot.toFixed(2)}deg)`, zIndex: z }}>
             <div style={styles.scaleWrap}>
               <SUS2026ConfirmationCard
                 attendeeName={t.name}
@@ -86,11 +109,15 @@ export default function ConfirmationWall() {
                 halftoneParams={DEFAULT_HALFTONE_PARAMS}
                 layout={1}
                 maxWidth={NATIVE_WIDTH}
+                meshSpeed={0}
                 staticBackground
+                staticGradient={gradient}
               />
             </div>
           </div>
-        ))}
+          );
+        })}
+       </div>
       </div>
     </div>
   );
@@ -101,8 +128,22 @@ const styles: Record<string, React.CSSProperties> = {
     position: "relative",
     minHeight: "100dvh",
     width: "100%",
-    overflow: "hidden",
+    overflow: "auto",
     backgroundColor: BG_COLOR,
+    display: "flex",
+    justifyContent: "center",
+    padding: "32px 16px",
+    boxSizing: "border-box",
+  },
+  frame: {
+    position: "relative",
+    zIndex: 10,
+    width: "min(520px, 100%)",
+    minHeight: "calc(100dvh - 64px)",
+    border: "1px solid rgba(244,241,219,0.18)",
+    borderRadius: 16,
+    background: "rgba(0,0,0,0.18)",
+    overflow: "hidden",
   },
   bg: {
     pointerEvents: "none",
@@ -115,17 +156,21 @@ const styles: Record<string, React.CSSProperties> = {
   grid: {
     position: "relative",
     zIndex: 10,
-    padding: 20,
+    padding: 24,
     display: "grid",
-    gridTemplateColumns: `repeat(auto-fill, ${TILE_WIDTH}px)`,
-    gap: 14,
+    // Tight column/row slots so tiles overlap heavily with the per-tile jitter
+    gridTemplateColumns: `repeat(auto-fill, ${Math.round(TILE_WIDTH * 0.58)}px)`,
+    gridAutoRows: `${Math.round(TILE_HEIGHT * 0.58)}px`,
+    columnGap: 0,
+    rowGap: 0,
     justifyContent: "center",
     justifyItems: "center",
+    alignItems: "center",
   },
   tile: {
     width: TILE_WIDTH,
     height: TILE_HEIGHT,
-    overflow: "hidden",
+    position: "relative",
   },
   scaleWrap: {
     width: NATIVE_WIDTH,
