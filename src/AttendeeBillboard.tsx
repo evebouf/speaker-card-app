@@ -33,7 +33,6 @@ const ATTENDEES: { oneLiner: string; location: string }[] = [
   { oneLiner: "ML Research Author", location: "Potomac, MD, USA" },
   { oneLiner: "ML Research Author", location: "Cambridge, UK" },
   { oneLiner: "ML Research Author", location: "Stanford, CA, USA" },
-  { oneLiner: "First-author ML Researcher", location: "Fremont, CA, USA" },
   { oneLiner: "IOL Medalist", location: "Oxford, UK" },
   { oneLiner: "Robotics Engineer", location: "Berkeley, CA, USA" },
   { oneLiner: "Robotics Engineer", location: "Chapel Hill, NC, USA" },
@@ -54,7 +53,6 @@ const ATTENDEES: { oneLiner: string; location: string }[] = [
   { oneLiner: "ML Researcher", location: "San Francisco, CA, USA" },
   { oneLiner: "Quant Researcher", location: "Chicago, IL, USA" },
   { oneLiner: "AI Researcher", location: "Ithaca, NY, USA" },
-  { oneLiner: "First-author ML Researcher", location: "Falls Church, VA, USA" },
   { oneLiner: "ML Engineer", location: "Berkeley, CA, USA" },
   { oneLiner: "Quant Researcher", location: "New York, NY, USA" },
   { oneLiner: "Founder", location: "Warsaw, Poland" },
@@ -97,13 +95,12 @@ const ATTENDEES: { oneLiner: string; location: string }[] = [
   { oneLiner: "AI Researcher", location: "London, UK" },
   { oneLiner: "IPhO Gold Medalist", location: "New Delhi, India" },
   { oneLiner: "ML Research Author", location: "Waterloo, Canada" },
-  { oneLiner: "First-author ML Researcher", location: "Toronto, Canada" },
   { oneLiner: "ML Researcher", location: "Bhaktapur, Nepal" },
   { oneLiner: "Security Engineer", location: "Ulaanbaatar, Mongolia" },
   { oneLiner: "IPhO Gold Medalist", location: "San Francisco, CA, USA" },
   { oneLiner: "IOI Gold Medalist", location: "San Francisco, CA, USA" },
   { oneLiner: "IOI Gold Medalist", location: "Cambridge, MA, USA" },
-  { oneLiner: "Putnam Competitor", location: "McLean, VA, USA" },
+  { oneLiner: "Putnam Fellow", location: "McLean, VA, USA" },
   { oneLiner: "ML Research Author", location: "Palo Alto, CA, USA" },
   { oneLiner: "Regeneron STS Finalist", location: "Palo Alto, CA, USA" },
   { oneLiner: "Hardware Engineer", location: "Raleigh, NC, USA" },
@@ -111,18 +108,28 @@ const ATTENDEES: { oneLiner: string; location: string }[] = [
 ];
 
 export default function AttendeeBillboard() {
+  // Deduplicate by one-liner, keep first occurrence's location
+  const uniques: { oneLiner: string; location: string }[] = [];
+  const seen = new Set<string>();
+  for (const a of ATTENDEES) {
+    const key = a.oneLiner.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    uniques.push(a);
+  }
+
   return (
     <div style={styles.page}>
       <img src={pageBg} alt="" style={styles.bg} />
       <div style={styles.container}>
         <div style={styles.header}>
           <div style={styles.title}>Startup School 2026 — Attendee One-Liners</div>
-          <div style={styles.count}>{ATTENDEES.length} confirmed</div>
+          <div style={styles.count}>{uniques.length} unique titles</div>
         </div>
         <ol style={styles.list}>
-          {ATTENDEES.map((a, i) => (
+          {uniques.map((a, i) => (
             <li key={i} style={styles.row}>
-              <span style={styles.num}>{String(i + 1).padStart(3, "0")}</span>
+              <span style={styles.num}>{String(i + 1).padStart(2, "0")}</span>
               <span style={styles.oneLiner}>{a.oneLiner}</span>
               <span style={styles.dash}>—</span>
               <span style={styles.location}>{a.location}</span>
