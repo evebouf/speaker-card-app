@@ -8,20 +8,22 @@ const FONT = "'Martian Mono', 'Geist Mono', 'Space Mono', monospace";
 
 // Curated from the original RSVP source, with locations rebalanced for global diversity.
 // Each unique title once; cities span ~22 countries.
-const ATTENDEES: { oneLiner: string; location: string }[] = [
-  { oneLiner: "IPhO Gold Medalist", location: "Cambridge, MA, USA" },
-  { oneLiner: "IMO Gold Medalist", location: "Seoul, South Korea" },
-  { oneLiner: "IMO Silver Medalist", location: "Lagos, Nigeria" },
-  { oneLiner: "IMO Medalist", location: "Cape Town, South Africa" },
-  { oneLiner: "IPhO Medalist", location: "Boulder, CO, USA" },
-  { oneLiner: "IOI Gold Medalist", location: "Kathmandu, Nepal" },
-  { oneLiner: "IOL Medalist", location: "Oxford, UK" },
-  { oneLiner: "USACO Platinum Programmer", location: "Bangalore, India" },
-  { oneLiner: "Putnam Fellow", location: "Paris, France" },
-  { oneLiner: "National Math Olympiad Finalist", location: "São Paulo, Brazil" },
-  { oneLiner: "Regeneron STS Finalist", location: "Sydney, Australia" },
+const ATTENDEES: { oneLiner: string; location: string; isReal?: boolean }[] = [
+  // Rare/identifiable honors — REAL locations from the source RSVP data
+  { oneLiner: "IPhO Gold Medalist", location: "Cambridge, MA, USA", isReal: true },
+  { oneLiner: "IMO Gold Medalist", location: "Pasadena, CA, USA", isReal: true },
+  { oneLiner: "IMO Silver Medalist", location: "Tampa, FL, USA", isReal: true },
+  { oneLiner: "IMO Medalist", location: "High Wycombe, UK", isReal: true },
+  { oneLiner: "IPhO Medalist", location: "San Francisco, CA, USA", isReal: true },
+  { oneLiner: "IOI Gold Medalist", location: "Kathmandu, Nepal", isReal: true },
+  { oneLiner: "IOL Medalist", location: "Oxford, UK", isReal: true },
+  { oneLiner: "USACO Platinum Programmer", location: "Cedar Falls, IA, USA", isReal: true },
+  { oneLiner: "Putnam Fellow", location: "McLean, VA, USA", isReal: true },
+  { oneLiner: "National Math Olympiad Finalist", location: "Berkeley, CA, USA", isReal: true },
+  { oneLiner: "Regeneron STS Finalist", location: "New Haven, CT, USA", isReal: true },
+  // Generic roles — diverse global cities for representation
   { oneLiner: "ML Research Author", location: "Tokyo, Japan" },
-  { oneLiner: "ML Researcher", location: "San Francisco, CA, USA" },
+  { oneLiner: "ML Researcher", location: "Bangalore, India" },
   { oneLiner: "AI Researcher", location: "Zurich, Switzerland" },
   { oneLiner: "ML Engineer", location: "Pittsburgh, PA, USA" },
   { oneLiner: "Software Engineer", location: "Mexico City, Mexico" },
@@ -60,10 +62,16 @@ export default function AttendeeBillboard() {
               <span style={styles.num}>{String(i + 1).padStart(2, "0")}</span>
               <span style={styles.oneLiner}>{a.oneLiner}</span>
               <span style={styles.dash}>—</span>
-              <span style={styles.location}>{a.location}</span>
+              <span style={styles.location}>
+                {a.location}
+                {a.isReal && <span style={styles.star}>*</span>}
+              </span>
             </li>
           ))}
         </ol>
+        <div style={styles.legend}>
+          <span style={styles.star}>*</span> Real location from confirmed RSVP source data
+        </div>
       </div>
     </div>
   );
@@ -154,5 +162,18 @@ const styles: Record<string, React.CSSProperties> = {
   location: {
     color: "rgba(244,241,219,0.55)",
     whiteSpace: "nowrap",
+  },
+  star: {
+    color: "#FF8A30",
+    marginLeft: 2,
+    fontWeight: 700,
+  },
+  legend: {
+    marginTop: 18,
+    paddingTop: 12,
+    borderTop: "1px solid rgba(244,241,219,0.12)",
+    fontSize: 10,
+    color: "rgba(244,241,219,0.5)",
+    textAlign: "center",
   },
 };
