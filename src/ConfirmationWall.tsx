@@ -1,4 +1,5 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { MeshGradient } from "@paper-design/shaders-react";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import pageBg from "./page-bg.png";
@@ -6,6 +7,8 @@ import SUS2026ConfirmationCard, {
   DEFAULT_GLASS_PARAMS,
   DEFAULT_HALFTONE_PARAMS,
 } from "./SUS2026ConfirmationCard";
+
+const SHADER_COLORS = ["#FF6A00", "#FC5E10", "#FF8A30", "#FFCB8E", "#FFE4C2"];
 
 const BG_COLOR = "#2E1F15";
 
@@ -49,7 +52,7 @@ const ATTENDEES: { name: string; location: string }[] = [
 ];
 
 // Render a wall of tickets. Uses staticBackground to avoid WebGL context limits.
-const MAX_TILES = 360;
+const MAX_TILES = 600;
 const NATIVE_WIDTH = 520;
 const NATIVE_HEIGHT = 280;
 const SCALE = 0.38;
@@ -57,6 +60,26 @@ const TILE_WIDTH = NATIVE_WIDTH * SCALE;   // ~198
 const TILE_HEIGHT = NATIVE_HEIGHT * SCALE; // ~106
 
 export default function ConfirmationWall() {
+  const shaderHolderRef = useRef<HTMLDivElement>(null);
+  const [bgImage, setBgImage] = useState<string | null>(null);
+
+  // Render the WebGL shader off-screen once, capture as data URL, reuse for all tiles
+  useEffect(() => {
+    if (bgImage) return;
+    const t = setTimeout(() => {
+      const div = shaderHolderRef.current;
+      if (!div) return;
+      const canvas = div.querySelector("canvas") as HTMLCanvasElement | null;
+      if (!canvas) return;
+      try {
+        setBgImage(canvas.toDataURL("image/png"));
+      } catch (e) {
+        console.warn("Shader capture failed", e);
+      }
+    }, 600);
+    return () => clearTimeout(t);
+  }, [bgImage]);
+
   // Use a stable shuffle so the wall doesn't reshuffle on every render
   const tiles = useMemo(() => {
     const arr = [...ATTENDEES];
@@ -83,20 +106,39 @@ export default function ConfirmationWall() {
     const dy = (h3 - 0.5) * 40;
     const z = Math.floor(h4 * 13);
     // Bright-spot position varies across the ticket
-    const gx = Math.round(20 + h5 * 75);   // 20%..95%
-    const gy = Math.round(20 + h6 * 60);   // 20%..80%
+    const gx = Math.round(h5 * 100);       // 0..100% bg position X
+    const gy = Math.round(h6 * 100);       // 0..100% bg position Y
     const gradient = `radial-gradient(ellipse at ${gx}% ${gy}%, #FF6A00 0%, #FC5E10 22%, #FF8A30 45%, #FFCB8E 72%, #FFE4C2 100%)`;
-    return { rot, dx, dy, z, gradient };
+    const bgPos = `${gx}% ${gy}%`;
+    return { rot, dx, dy, z, gradient, bgPos };
   };
 
   return (
     <div style={styles.page}>
       <img src={pageBg} alt="" style={styles.bg} />
 
+      {/* Off-screen shader to capture as bg image — only runs once */}
+      {!bgImage && (
+        <div
+          ref={shaderHolderRef}
+          style={{ position: "fixed", top: -9999, left: -9999, width: 800, height: 800 }}
+        >
+          <MeshGradient
+            style={{ width: "100%", height: "100%" }}
+            colors={SHADER_COLORS}
+            distortion={0.6}
+            swirl={0.3}
+            speed={0}
+            frame={3000}
+            webGlContextAttributes={{ preserveDrawingBuffer: true }}
+          />
+        </div>
+      )}
+
       <div style={styles.frame}>
        <div style={styles.grid}>
         {tiles.map((t, i) => {
-          const { rot, dx, dy, z, gradient } = transformFor(i);
+          const { rot, dx, dy, z, gradient, bgPos } = transformFor(i);
           return (
           <div key={i} style={{ ...styles.tile, transform: `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px) rotate(${rot.toFixed(2)}deg)`, zIndex: z }}>
             <div style={styles.scaleWrap}>
@@ -112,6 +154,8 @@ export default function ConfirmationWall() {
                 meshSpeed={0}
                 staticBackground
                 staticGradient={gradient}
+                staticBackgroundImage={bgImage ?? undefined}
+                staticBackgroundPosition={bgPos}
               />
             </div>
           </div>
@@ -156,11 +200,11 @@ const styles: Record<string, React.CSSProperties> = {
   grid: {
     position: "relative",
     zIndex: 10,
-    padding: 24,
+    padding: 0,
     display: "grid",
-    // Tight column/row slots so tiles overlap heavily with the per-tile jitter
-    gridTemplateColumns: `repeat(auto-fill, ${Math.round(TILE_WIDTH * 0.58)}px)`,
-    gridAutoRows: `${Math.round(TILE_HEIGHT * 0.58)}px`,
+    // Very tight cells so tiles overlap heavily — guarantees no gaps even with jitter
+    gridTemplateColumns: `repeat(auto-fill, ${Math.round(TILE_WIDTH * 0.45)}px)`,
+    gridAutoRows: `${Math.round(TILE_HEIGHT * 0.45)}px`,
     columnGap: 0,
     rowGap: 0,
     justifyContent: "center",

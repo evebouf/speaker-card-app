@@ -96,6 +96,10 @@ interface SUS2026ConfirmationCardProps {
   staticBackground?: boolean;
   /** Override the default static gradient CSS — only used when staticBackground is true. */
   staticGradient?: string;
+  /** A captured image (data URL) of the actual shader background. Takes precedence over staticGradient when set. */
+  staticBackgroundImage?: string;
+  /** Background-position string for the staticBackgroundImage (e.g. "30% 60%"). */
+  staticBackgroundPosition?: string;
 }
 
 const FONT = "'Martian Mono', 'Geist Mono', 'Space Mono', monospace";
@@ -200,6 +204,8 @@ export const SUS2026ConfirmationCard: React.FC<
   quote,
   staticBackground = false,
   staticGradient,
+  staticBackgroundImage,
+  staticBackgroundPosition,
 }) => {
   const grainRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef({ offsetX: 0.15, offsetY: -0.21, glassScale: 2.2 });
@@ -285,9 +291,17 @@ export const SUS2026ConfirmationCard: React.FC<
               style={{
                 width: "100%",
                 height: "100%",
-                background:
-                  staticGradient ??
-                  "radial-gradient(ellipse at 70% 50%, #FF6A00 0%, #FC5E10 22%, #FF8A30 45%, #FFCB8E 72%, #FFE4C2 100%)",
+                ...(staticBackgroundImage
+                  ? {
+                      backgroundImage: `url(${staticBackgroundImage})`,
+                      backgroundSize: "cover",
+                      backgroundPosition: staticBackgroundPosition ?? "50% 50%",
+                    }
+                  : {
+                      background:
+                        staticGradient ??
+                        "radial-gradient(ellipse at 70% 50%, #FF6A00 0%, #FC5E10 22%, #FF8A30 45%, #FFCB8E 72%, #FFE4C2 100%)",
+                    }),
               }}
             />
           ) : (
