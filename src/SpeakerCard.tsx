@@ -148,6 +148,14 @@ const SPEAKERS: Speaker[] = [
     sessionType: "Speaker",
     frameOffset: 6300,
   },
+  {
+    id: "susan",
+    name: "Susan Kare",
+    image: "/susan.png",
+    roleLines: ["Iconographer", "and Designer"],
+    sessionType: "Speaker",
+    frameOffset: 6000,
+  },
 ];
 
 export default function SpeakerCard() {
