@@ -156,6 +156,16 @@ const SPEAKERS: Speaker[] = [
     sessionType: "Speaker",
     frameOffset: 6000,
   },
+  {
+    id: "kratsios",
+    name: "Michael Kratsios",
+    image: "/kratsios.png",
+    roleLines: ["Director,", "White House Office", "of Science and", "Technology Policy"],
+    smallName: true,
+    smallRole: true,
+    sessionType: "Speaker",
+    frameOffset: 6600,
+  },
 ];
 
 export default function SpeakerCard() {
